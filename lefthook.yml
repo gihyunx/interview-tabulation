@@ -1,0 +1,18 @@
+# https://lefthook.dev/configuration/
+
+assert_lefthook_installed: true
+
+pre-commit:
+  jobs:
+    - name: golangci-lint
+      root: server/
+      glob: "*.go"
+      run: mise exec -- golangci-lint run --new-from-rev=HEAD ./...
+    - name: prettier
+      root: web/
+      glob: "*.{js,ts,svelte,css,json}"
+      run: mise exec -- pnpm prettier --check {staged_files}
+    - name: eslint
+      root: web/
+      glob: "*.{js,ts,svelte}"
+      run: mise exec -- pnpm eslint {staged_files}

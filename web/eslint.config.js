@@ -36,6 +36,9 @@ export default defineConfig(
 	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
-		rules: {}
+		rules: {
+			// Always use braces for if/else/for/while bodies. Must come after `prettier`, which turns it off.
+			curly: ["error", "all"]
+		}
 	}
 );

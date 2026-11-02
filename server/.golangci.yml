@@ -1,0 +1,55 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - ineffassign # assigned but never read
+    - errorlint # wrong error comparison (== instead of errors.Is)
+    - nilerr # returns nil when err != nil check just passed
+    - nilnesserr # nil interface value returned as nil error
+    - unconvert # unnecessary type conversions; zero false positives
+
+    # HTTP/Database
+    - bodyclose
+    - sqlclosecheck
+
+    # Others
+    - nolintlint # malformed or missing reason in //nolint directives
+    - modernize # flags patterns replaceable by newer Go idioms
+    - revive # enforce strict code style preset like with nesting
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false # _ = f() is intentional
+    nolintlint:
+      require-explanation: true
+      allow-unused: false
+    revive:
+      rules:
+        - name: max-control-nesting
+          arguments: [3]
+
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - errcheck
+          - bodyclose
+      - linters: [errcheck]
+        text: 'Error return value of `.*\.Rollback` is not checked'
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

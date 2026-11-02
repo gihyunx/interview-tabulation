@@ -1,0 +1,118 @@
+[tools]
+go = "1.27.3"
+node = "26"
+pnpm = "12"
+"aqua:golangci/golangci-lint" = "2.15.0"
+"aqua:pressly/goose" = "3.29.0"
+"aqua:evilmartians/lefthook" = "2.2.2"
+
+[env]
+_.file = "server/.env"
+
+[hooks]
+postinstall = "lefthook install"
+
+[tasks.deps]
+description = "Install server and web dependencies"
+run = [
+  "cd server && go mod download",
+  "cd web && pnpm install --frozen-lockfile",
+]
+
+[tasks.setup]
+description = "First-time setup: deps, database, migrations"
+depends = ["deps"]
+run = ["mise run db:start", "mise run db:up"]
+
+[tasks.tidy]
+description = "Sync Go dependencies"
+dir = "server"
+run = "go mod tidy"
+
+[tasks."dev:server"]
+description = "Run server (dev)"
+dir = "server"
+run = "go run ."
+
+[tasks."dev:web"]
+description = "Run web (dev)"
+dir = "web"
+run = "pnpm dev"
+
+[tasks.dev]
+description = "Run database, server and web (dev)"
+depends = ["db:start", "dev:server", "dev:web"]
+
+[tasks.build]
+description = "Build web and server"
+run = [
+  "cd web && BACKEND_URL= pnpm build",
+  "cd server && go build -o bin/server .",
+]
+
+[tasks.start]
+description = "Build and serve API + web on the LAN"
+depends = ["build", "db:start"]
+env = { HOST = "0.0.0.0", APP_ENV = "production" }
+run = "bin/server"
+dir = "server"
+
+[tasks.lint]
+description = "Run linters"
+run = [
+  "cd server && golangci-lint run",
+  "cd web && pnpm lint && pnpm check",
+]
+
+[tasks.format]
+description = "Format code"
+run = ["cd server && go fmt ./...", "cd web && pnpm format"]
+
+[tasks.test]
+description = "Run all tests (requires Docker)"
+depends = ["lint"]
+dir = "server"
+run = "go test ./..."
+
+[tasks."gen:api"]
+description = "Generate web API types from the OpenAPI spec"
+run = [
+  "cd server && go run ./cmd/openapi > ../web/src/lib/api/openapi.json",
+  "cd web && pnpm openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts",
+]
+
+[tasks."db:start"]
+description = "Start Postgres and wait until healthy"
+dir = "server"
+run = "docker compose up -d --wait postgres"
+
+[tasks."db:stop"]
+description = "Stop Postgres (data kept)"
+dir = "server"
+run = "docker compose stop"
+
+[tasks."db:up"]
+description = "Apply pending migrations"
+dir = "server"
+run = "goose up"
+
+[tasks."db:down"]
+description = "Roll back one migration"
+dir = "server"
+run = "goose down"
+
+[tasks."db:status"]
+description = "Show migration status"
+dir = "server"
+run = "goose status"
+
+[tasks."db:create"]
+description = "Create a new migration file (the only way to create one)"
+usage = 'arg "<name>" help="Migration name"'
+dir = "server"
+run = 'goose create "$usage_name" sql'
+
+[tasks."db:reset"]
+description = "Wipe the database and re-run migrations (destructive, dev only)"
+confirm = "This deletes all data. Continue?"
+run = ["cd server && docker compose down -v", "mise run db:start", "mise run db:up"]

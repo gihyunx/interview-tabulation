@@ -32,7 +32,7 @@ run = "go mod tidy"
 [tasks."dev:server"]
 description = "Run server (dev)"
 dir = "server"
-run = "go run ."
+run = "go build -o bin/server . && exec bin/server"
 
 [tasks."dev:web"]
 description = "Run web (dev)"
@@ -41,7 +41,11 @@ run = "pnpm dev"
 
 [tasks.dev]
 description = "Run database, server and web (dev)"
-depends = ["db:start", "dev:server", "dev:web"]
+run = """
+mise run db:start
+trap 'mise run db:stop' EXIT
+mise run dev:server ::: dev:web
+"""
 
 [tasks.build]
 description = "Build web and server"

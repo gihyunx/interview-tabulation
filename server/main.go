@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -19,14 +17,13 @@ import (
 	"github.com/gihyunx/interview-tabulation/migrations"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	cfg, err := config.NewConfig()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	_ = godotenv.Load()
+
+	cfg := config.NewConfig()
 
 	setupLogger(cfg.LogLevel, cfg.AppEnv)
 
@@ -49,29 +46,25 @@ func run(cfg config.Config) error {
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := pool.Ping(pingCtx); err != nil {
-		return fmt.Errorf("database unreachable (is it running? try `mise run db:start`): %w", err)
+		return fmt.Errorf("database unreachable: %w", err)
 	}
 
 	if err := migrations.Migrate(ctx, cfg.DatabaseURL); err != nil {
 		return err
 	}
 
-	server := &http.Server{
-		Addr:              net.JoinHostPort(cfg.Host, cfg.Port),
-		Handler:           newHandler(cfg, pool),
-		ReadHeaderTimeout: 10 * time.Second,
-		// No WriteTimeout: SSE streams are long-lived.
+	router := http.NewServeMux()
+	api.New(router, pool)
+
+	server := http.Server{
+		Addr:    cfg.Host + ":" + cfg.Port,
+		Handler: corsMiddleware(cfg.AllowedOrigins, logger.RequestLogger(router)),
 	}
+
+	slog.Info("starting server", "port", cfg.Port)
 
 	errCh := make(chan error, 1)
 	go func() { errCh <- server.ListenAndServe() }()
-
-	slog.Info("starting server", "addr", server.Addr)
-	if cfg.AppEnv == "production" {
-		for _, ip := range lanIPs() {
-			slog.Info("reachable on LAN", "url", "http://"+net.JoinHostPort(ip, cfg.Port))
-		}
-	}
 
 	select {
 	case err := <-errCh:
@@ -79,49 +72,10 @@ func run(cfg config.Config) error {
 	case <-ctx.Done():
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		return err
-	}
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
 
-	slog.Info("server stopped")
-	return nil
-}
-
-func newHandler(cfg config.Config, pool *pgxpool.Pool) http.Handler {
-	mux := http.NewServeMux()
-	api.New(mux, pool)
-
-	if cfg.AppEnv == "production" {
-		mux.Handle("/", spaHandler(cfg.WebDir))
-	}
-
-	return corsMiddleware(cfg.AllowedOrigins, logger.RequestLogger(mux))
-}
-
-// spaHandler serves files from dir and falls back to 200.html for any other
-// path. API paths never reach it because Huma routes are more specific; the
-// reserved prefixes below 404 instead of returning HTML.
-func spaHandler(dir string) http.Handler {
-	files := http.FileServer(http.Dir(dir))
-	reserved := []string{"/v1", "/health", "/docs", "/openapi"}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, p := range reserved {
-			if r.URL.Path == p || strings.HasPrefix(r.URL.Path, p+"/") || strings.HasPrefix(r.URL.Path, p+".") {
-				http.NotFound(w, r)
-				return
-			}
-		}
-
-		if info, err := os.Stat(filepath.Join(dir, filepath.Clean("/"+r.URL.Path))); err == nil && !info.IsDir() {
-			files.ServeHTTP(w, r)
-			return
-		}
-
-		http.ServeFile(w, r, filepath.Join(dir, "200.html"))
-	})
+	return server.Shutdown(shutdownCtx)
 }
 
 func corsMiddleware(allowedOrigins []string, next http.Handler) http.Handler {
@@ -162,19 +116,4 @@ func setupLogger(level, appEnv string) {
 	}
 
 	slog.SetDefault(slog.New(h))
-}
-
-func lanIPs() []string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return nil
-	}
-
-	var ips []string
-	for _, a := range addrs {
-		if n, ok := a.(*net.IPNet); ok && !n.IP.IsLoopback() && n.IP.To4() != nil {
-			ips = append(ips, n.IP.String())
-		}
-	}
-	return ips
 }

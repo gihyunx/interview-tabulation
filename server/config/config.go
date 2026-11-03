@@ -13,6 +13,12 @@ type Config struct {
 	AppEnv         string
 	LogLevel       string
 	WebDir         string
+	JWTSecret      string
+
+	AdminUsername  string
+	AdminPassword  string
+	AdminFirstName string
+	AdminLastName  string
 }
 
 func NewConfig() Config {
@@ -24,6 +30,12 @@ func NewConfig() Config {
 		AppEnv:         getEnvOrDefault("APP_ENV", "development"),
 		LogLevel:       getEnvOrDefault("LOG_LEVEL", "info"),
 		WebDir:         getEnvOrDefault("WEB_DIR", "../web/build"),
+		JWTSecret:      requireEnv("JWT_SECRET"),
+
+		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
+		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
+		AdminFirstName: os.Getenv("ADMIN_FIRST_NAME"),
+		AdminLastName:  os.Getenv("ADMIN_LAST_NAME"),
 	}
 }
 

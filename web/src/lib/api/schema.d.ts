@@ -21,10 +21,467 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/v1/auth/login": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Log in
+		 * @description Checks username and password and sets the session cookie.
+		 */
+		post: operations["login"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/auth/logout": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Log out
+		 * @description Clears the session cookie.
+		 */
+		post: operations["logout"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/auth/me": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Current user */
+		get: operations["me"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/candidates": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List candidates */
+		get: operations["list-candidates"];
+		put?: never;
+		/** Create candidate */
+		post: operations["create-candidate"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/candidates/import": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Import candidates from CSV
+		 * @description Header must be `first_name,last_name`. With dry_run=true nothing is saved and row errors are returned in the body.
+		 */
+		post: operations["import-candidates"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/candidates/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post?: never;
+		/**
+		 * Delete candidate
+		 * @description Fails with 409 if the candidate has scores.
+		 */
+		delete: operations["delete-candidate"];
+		options?: never;
+		head?: never;
+		/** Update candidate */
+		patch: operations["update-candidate"];
+		trace?: never;
+	};
+	"/v1/events": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Server-sent events
+		 * @description Invalidation hints: which topic changed. Refetch the matching GET endpoints.
+		 */
+		get: operations["events"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/interviews": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List interviews with judges */
+		get: operations["list-interviews"];
+		put?: never;
+		/** Create interview */
+		post: operations["create-interview"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/interviews/order": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/** Save interview order */
+		put: operations["reorder-interviews"];
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/interviews/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post?: never;
+		/**
+		 * Delete interview
+		 * @description Removes judge assignments too. Fails with 409 if any judge has scores.
+		 */
+		delete: operations["delete-interview"];
+		options?: never;
+		head?: never;
+		/**
+		 * Update interview
+		 * @description The rubric and mode cannot change once the interview has scores (409).
+		 */
+		patch: operations["update-interview"];
+		trace?: never;
+	};
+	"/v1/interviews/{id}/board": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Candidates with status and my scores
+		 * @description From the calling judge's point of view. 403 if not assigned to the interview.
+		 */
+		get: operations["interview-board"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/interviews/{id}/candidates/{candidateId}/scores": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/**
+		 * Submit or update my scores for a candidate
+		 * @description Idempotent upsert. Every criterion is required. A 1-on-1 candidate already scored by another judge gets 409.
+		 */
+		put: operations["submit-scores"];
+		post?: never;
+		/** Clear one judge's scores for a candidate */
+		delete: operations["clear-submission"];
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/interviews/{id}/judges": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		/** Replace the judges of an interview */
+		put: operations["set-interview-judges"];
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/me/interviews": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Interviews I judge, with rubric */
+		get: operations["list-my-interviews"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/results": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Candidates with judge totals and average
+		 * @description Repeat `interview` to select the graded interviews. With none, the most recently created interview of each mode is used. The average is set only when every expected total is in.
+		 */
+		get: operations["results"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/results.xlsx": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/**
+		 * Download results as .xlsx
+		 * @description Same `interview` selection as /results.
+		 */
+		get: operations["results-xlsx"];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/rubrics": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List rubrics */
+		get: operations["list-rubrics"];
+		put?: never;
+		/**
+		 * Create rubric
+		 * @description Criteria points must total 100.
+		 */
+		post: operations["create-rubric"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/rubrics/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get rubric */
+		get: operations["get-rubric"];
+		put?: never;
+		post?: never;
+		/**
+		 * Delete rubric
+		 * @description Fails with 409 while an interview uses it.
+		 */
+		delete: operations["delete-rubric"];
+		options?: never;
+		head?: never;
+		/**
+		 * Update rubric and its criteria
+		 * @description Criteria are saved together with the rubric, in order. Once a score uses the rubric, criteria cannot be added or removed and points cannot change (409).
+		 */
+		patch: operations["update-rubric"];
+		trace?: never;
+	};
+	"/v1/users": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** List users */
+		get: operations["list-users"];
+		put?: never;
+		/** Create user */
+		post: operations["create-user"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
+	"/v1/users/{id}": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		post?: never;
+		/**
+		 * Delete user
+		 * @description Also removes the user's judge assignments. Fails with 409 if the user has scores.
+		 */
+		delete: operations["delete-user"];
+		options?: never;
+		head?: never;
+		/** Update user */
+		patch: operations["update-user"];
+		trace?: never;
+	};
+	"/v1/users/{id}/password": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/** Reset user password */
+		post: operations["reset-user-password"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 }
 export type webhooks = Record<string, never>;
 export interface components {
 	schemas: {
+		Board: {
+			candidates: components["schemas"]["BoardCandidate"][] | null;
+			judge_id: string;
+		};
+		BoardCandidate: {
+			first_name: string;
+			id: string;
+			last_name: string;
+			my_scores: components["schemas"]["ScoreValue"][] | null;
+			scored_by?: string;
+			/** @enum {string} */
+			status: "unscored" | "scored" | "scored_by_other";
+			/** Format: int64 */
+			total?: number;
+		};
+		Candidate: {
+			/** Format: date-time */
+			created_at: string;
+			first_name: string;
+			id: string;
+			last_name: string;
+			/** Format: date-time */
+			updated_at: string;
+		};
+		CandidateUpdateInput: {
+			first_name?: string;
+			last_name?: string;
+		};
+		Criterion: {
+			description: string;
+			id: string;
+			/** Format: int32 */
+			max_points: number;
+			/** Format: int32 */
+			position: number;
+			title: string;
+		};
+		CriterionInput: {
+			description: string;
+			/** Format: uuid */
+			id?: string;
+			/** Format: int32 */
+			max_points: number;
+			title: string;
+		};
 		ErrorDetail: {
 			/** @description Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id' */
 			location?: string;
@@ -66,9 +523,216 @@ export interface components {
 			 */
 			type: string;
 		};
+		Event: {
+			interviewId?: string;
+			/** @enum {string} */
+			topic: "scores" | "candidates" | "rubrics" | "interviews" | "users";
+		};
 		HealthOutputBody: {
 			/** @example ok */
 			status: string;
+		};
+		ImportOutputBody: {
+			dry_run: boolean;
+			/** Format: int64 */
+			errors: number;
+			rows: components["schemas"]["ImportRow"][] | null;
+		};
+		ImportRow: {
+			error?: string;
+			first_name: string;
+			last_name: string;
+			/** Format: int64 */
+			line: number;
+		};
+		Interview: {
+			/** Format: date-time */
+			created_at: string;
+			description: string;
+			has_scores: boolean;
+			id: string;
+			judges: components["schemas"]["JudgeInfo"][] | null;
+			/** @enum {string} */
+			mode: "one_on_one" | "panel";
+			/** Format: int32 */
+			position: number;
+			rubric_id: string;
+			rubric_name: string;
+			title: string;
+			/** Format: date-time */
+			updated_at: string;
+		};
+		InterviewCreateInput: {
+			description: string;
+			/** @description User ids to assign as judges. */
+			judge_user_ids?: string[] | null;
+			/** @enum {string} */
+			mode: "one_on_one" | "panel";
+			/** Format: uuid */
+			rubric_id: string;
+			title: string;
+		};
+		InterviewUpdateInput: {
+			description?: string;
+			/** @enum {string} */
+			mode?: "one_on_one" | "panel";
+			/** Format: uuid */
+			rubric_id?: string;
+			title?: string;
+		};
+		JudgeInfo: {
+			first_name: string;
+			judge_id: string;
+			last_name: string;
+			/** Format: int64 */
+			scored: number;
+			user_id: string;
+		};
+		LoginInputBody: {
+			password: string;
+			username: string;
+		};
+		MyCriterion: {
+			description: string;
+			id: string;
+			/** Format: int32 */
+			max_points: number;
+			title: string;
+		};
+		MyInterview: {
+			/** Format: int64 */
+			candidate_count: number;
+			description: string;
+			id: string;
+			judge_id: string;
+			/** @enum {string} */
+			mode: "one_on_one" | "panel";
+			rubric: components["schemas"]["MyRubric"];
+			title: string;
+		};
+		MyRubric: {
+			criteria: components["schemas"]["MyCriterion"][] | null;
+			id: string;
+			name: string;
+		};
+		NameInput: {
+			first_name: string;
+			last_name: string;
+		};
+		"Reorder-interviewsRequest": {
+			ids: string[] | null;
+		};
+		ResetPasswordInputBody: {
+			password: string;
+		};
+		ResultCandidate: {
+			/** Format: double */
+			average?: number;
+			complete: boolean;
+			first_name: string;
+			id: string;
+			last_name: string;
+			submissions: components["schemas"]["Submission"][] | null;
+			/** Format: int64 */
+			sum: number;
+		};
+		ResultCriterion: {
+			id: string;
+			/** Format: int32 */
+			max_points: number;
+			title: string;
+		};
+		ResultInterview: {
+			criteria: components["schemas"]["ResultCriterion"][] | null;
+			id: string;
+			judges: components["schemas"]["ResultJudge"][] | null;
+			/** @enum {string} */
+			mode: "one_on_one" | "panel";
+			selected: boolean;
+			title: string;
+		};
+		ResultJudge: {
+			judge_id: string;
+			name: string;
+		};
+		Results: {
+			candidates: components["schemas"]["ResultCandidate"][] | null;
+			/** Format: int64 */
+			expected: number;
+			/** Format: int64 */
+			fully_scored: number;
+			interviews: components["schemas"]["ResultInterview"][] | null;
+		};
+		Rubric: {
+			/** Format: date-time */
+			created_at: string;
+			criteria: components["schemas"]["Criterion"][] | null;
+			id: string;
+			locked: boolean;
+			name: string;
+			/** Format: date-time */
+			updated_at: string;
+			used_by: string[] | null;
+		};
+		SaveInput: {
+			criteria: components["schemas"]["CriterionInput"][] | null;
+			name: string;
+		};
+		ScoreValue: {
+			/** Format: uuid */
+			criterion_id: string;
+			/** Format: int32 */
+			value: number;
+		};
+		"Set-interview-judgesRequest": {
+			user_ids: string[] | null;
+		};
+		Submission: {
+			/** Format: date-time */
+			edited_at: string;
+			interview_id: string;
+			judge_id: string;
+			judge_name: string;
+			/** Format: date-time */
+			submitted_at: string;
+			/** Format: int64 */
+			total: number;
+			values: components["schemas"]["SubmissionValue"][] | null;
+		};
+		SubmissionValue: {
+			criterion_id: string;
+			/** Format: int32 */
+			value: number;
+		};
+		SubmitInput: {
+			scores: components["schemas"]["ScoreValue"][] | null;
+		};
+		User: {
+			/** Format: date-time */
+			created_at: string;
+			first_name: string;
+			id: string;
+			last_name: string;
+			/** @enum {string} */
+			role: "admin" | "judge";
+			/** Format: date-time */
+			updated_at: string;
+			username: string;
+		};
+		UserCreateInput: {
+			first_name: string;
+			last_name: string;
+			password: string;
+			/** @enum {string} */
+			role: "admin" | "judge";
+			username: string;
+		};
+		UserUpdateInput: {
+			first_name?: string;
+			last_name?: string;
+			/** @enum {string} */
+			role?: "admin" | "judge";
+			username?: string;
 		};
 	};
 	responses: never;
@@ -96,6 +760,1000 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["HealthOutputBody"];
 				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	login: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["LoginInputBody"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					"Set-Cookie"?: string;
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["User"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	logout: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					"Set-Cookie"?: string;
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	me: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["User"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"list-candidates": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Candidate"][] | null;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"create-candidate": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["NameInput"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Candidate"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"import-candidates": {
+		parameters: {
+			query?: {
+				dry_run?: boolean;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: {
+			content: {
+				"multipart/form-data": {
+					/** Format: binary */
+					file: string;
+				};
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["ImportOutputBody"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"delete-candidate": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"update-candidate": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["CandidateUpdateInput"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Candidate"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	events: {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"text/event-stream": {
+						data: components["schemas"]["Event"];
+						/**
+						 * @description The event name.
+						 * @constant
+						 */
+						event?: "message";
+						/** @description The event ID. */
+						id?: number | string;
+						/** @description The retry time in milliseconds. */
+						retry?: number;
+					}[];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"list-interviews": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Interview"][] | null;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"create-interview": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["InterviewCreateInput"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Interview"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"reorder-interviews": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["Reorder-interviewsRequest"];
+			};
+		};
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"delete-interview": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"update-interview": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["InterviewUpdateInput"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Interview"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"interview-board": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Board"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"submit-scores": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+				candidateId: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["SubmitInput"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["BoardCandidate"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"clear-submission": {
+		parameters: {
+			query: {
+				/** @description The judge id whose scores to clear. */
+				judge: string;
+			};
+			header?: never;
+			path: {
+				id: string;
+				candidateId: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"set-interview-judges": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["Set-interview-judgesRequest"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Interview"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"list-my-interviews": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["MyInterview"][] | null;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	results: {
+		parameters: {
+			query?: {
+				interview?: string[] | null;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Results"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"results-xlsx": {
+		parameters: {
+			query?: {
+				interview?: string[] | null;
+			};
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description The workbook */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"list-rubrics": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Rubric"][] | null;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"create-rubric": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["SaveInput"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Rubric"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"get-rubric": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Rubric"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"delete-rubric": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"update-rubric": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["SaveInput"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["Rubric"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"list-users": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["User"][] | null;
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"create-user": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UserCreateInput"];
+			};
+		};
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["User"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"delete-user": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"update-user": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["UserUpdateInput"];
+			};
+		};
+		responses: {
+			/** @description OK */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/json": components["schemas"]["User"];
+				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"reset-user-password": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path: {
+				id: string;
+			};
+			cookie?: never;
+		};
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["ResetPasswordInputBody"];
+			};
+		};
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			/** @description Error */
 			default: {

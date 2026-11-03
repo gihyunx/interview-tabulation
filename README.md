@@ -33,11 +33,19 @@ Install dependencies, start the database, and run migrations:
 mise run setup
 ```
 
+Create the first admin (uses the `ADMIN_*` values in `server/.env`, safe to run again):
+
+```sh
+mise run seed
+```
+
 Run the server and the web app:
 
 ```sh
 mise run dev
 ```
+
+Log in at http://localhost:5173 with the admin username and password from `server/.env`. Create judges on the Users page, then rubrics, interviews and candidates, and assign judges to interviews.
 
 | URL                          | What               |
 | ---------------------------- | ------------------ |
@@ -64,7 +72,10 @@ mise run db:create <name>
 mise run test
 ```
 
-Requires Docker to be running. Integration tests start their own Postgres container with [Testcontainers](https://testcontainers.com/).
+Runs lint, the Go tests, Vitest and the Playwright end-to-end test. Requires Docker to be running.
+
+- Go integration tests start their own Postgres container with [Testcontainers](https://testcontainers.com/).
+- The e2e test starts its own API (port 8081) and web app (port 5174) against a throwaway database named `tabulation_e2e` in the Postgres from `mise run db:start`. It never touches your dev data. `mise run deps` installs the Chromium it uses.
 
 ### Tasks
 

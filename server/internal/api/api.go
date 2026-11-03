@@ -7,20 +7,38 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
+	"github.com/gihyunx/interview-tabulation/candidate"
+	"github.com/gihyunx/interview-tabulation/config"
+	"github.com/gihyunx/interview-tabulation/export"
+	"github.com/gihyunx/interview-tabulation/internal/event"
+	"github.com/gihyunx/interview-tabulation/interview"
+	"github.com/gihyunx/interview-tabulation/realtime"
+	"github.com/gihyunx/interview-tabulation/rubric"
+	"github.com/gihyunx/interview-tabulation/score"
+	"github.com/gihyunx/interview-tabulation/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // New builds the Huma API on mux and registers all routes. pool may be nil
 // when only the OpenAPI spec is needed (cmd/openapi).
-func New(mux *http.ServeMux, pool *pgxpool.Pool) huma.API {
-	cfg := huma.DefaultConfig("Interview Tabulation API", "0.1.0")
-	cfg.CreateHooks = nil
-	cfg.DocsRenderer = huma.DocsRendererScalar
+func New(mux *http.ServeMux, pool *pgxpool.Pool, cfg config.Config, shutdown <-chan struct{}) huma.API {
+	humaCfg := huma.DefaultConfig("Interview Tabulation API", "0.1.0")
+	humaCfg.CreateHooks = nil
+	humaCfg.DocsRenderer = huma.DocsRendererScalar
 
-	api := humago.New(mux, cfg)
+	api := humago.New(mux, humaCfg)
 	registerHealth(api, pool)
 
-	// Feature routes mount under huma.NewGroup(api, "/v1").
+	v1 := huma.NewGroup(api, "/v1")
+	bus := event.NewBus()
+	user.Setup(v1, pool, cfg, bus)
+	candidate.Setup(v1, pool, cfg, bus)
+	rubric.Setup(v1, pool, cfg, bus)
+	interview.Setup(v1, pool, cfg, bus)
+	score.Setup(v1, pool, cfg, bus)
+	export.Setup(v1, pool, cfg)
+	realtime.Setup(v1, cfg, bus, shutdown)
+
 	return api
 }
 

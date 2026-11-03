@@ -1,6 +1,83 @@
 {
 	"components": {
 		"schemas": {
+			"Board": {
+				"additionalProperties": false,
+				"properties": {
+					"candidates": {
+						"items": { "$ref": "#/components/schemas/BoardCandidate" },
+						"type": ["array", "null"]
+					},
+					"judge_id": { "type": "string" }
+				},
+				"required": ["judge_id", "candidates"],
+				"type": "object"
+			},
+			"BoardCandidate": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "type": "string" },
+					"id": { "type": "string" },
+					"last_name": { "type": "string" },
+					"my_scores": {
+						"items": { "$ref": "#/components/schemas/ScoreValue" },
+						"type": ["array", "null"]
+					},
+					"scored_by": { "type": "string" },
+					"status": { "enum": ["unscored", "scored", "scored_by_other"], "type": "string" },
+					"total": { "format": "int64", "type": "integer" }
+				},
+				"required": ["id", "first_name", "last_name", "status", "my_scores"],
+				"type": "object"
+			},
+			"Candidate": {
+				"additionalProperties": false,
+				"properties": {
+					"created_at": { "format": "date-time", "type": "string" },
+					"first_name": { "type": "string" },
+					"id": { "type": "string" },
+					"last_name": { "type": "string" },
+					"updated_at": { "format": "date-time", "type": "string" }
+				},
+				"required": ["id", "first_name", "last_name", "created_at", "updated_at"],
+				"type": "object"
+			},
+			"CandidateUpdateInput": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"last_name": { "maxLength": 100, "minLength": 1, "type": "string" }
+				},
+				"type": "object"
+			},
+			"Criterion": {
+				"additionalProperties": false,
+				"properties": {
+					"description": { "type": "string" },
+					"id": { "type": "string" },
+					"max_points": {
+						"format": "int32",
+						"maximum": 32767,
+						"minimum": -32768,
+						"type": "integer"
+					},
+					"position": { "format": "int32", "maximum": 32767, "minimum": -32768, "type": "integer" },
+					"title": { "type": "string" }
+				},
+				"required": ["id", "title", "description", "max_points", "position"],
+				"type": "object"
+			},
+			"CriterionInput": {
+				"additionalProperties": false,
+				"properties": {
+					"description": { "maxLength": 1000, "type": "string" },
+					"id": { "format": "uuid", "type": "string" },
+					"max_points": { "format": "int32", "maximum": 100, "minimum": 1, "type": "integer" },
+					"title": { "maxLength": 200, "minLength": 1, "type": "string" }
+				},
+				"required": ["title", "description", "max_points"],
+				"type": "object"
+			},
 			"ErrorDetail": {
 				"additionalProperties": false,
 				"properties": {
@@ -53,10 +130,414 @@
 				},
 				"type": "object"
 			},
+			"Event": {
+				"additionalProperties": false,
+				"properties": {
+					"interviewId": { "type": "string" },
+					"topic": {
+						"enum": ["scores", "candidates", "rubrics", "interviews", "users"],
+						"type": "string"
+					}
+				},
+				"required": ["topic"],
+				"type": "object"
+			},
 			"HealthOutputBody": {
 				"additionalProperties": false,
 				"properties": { "status": { "examples": ["ok"], "type": "string" } },
 				"required": ["status"],
+				"type": "object"
+			},
+			"ImportOutputBody": {
+				"additionalProperties": false,
+				"properties": {
+					"dry_run": { "type": "boolean" },
+					"errors": { "format": "int64", "type": "integer" },
+					"rows": {
+						"items": { "$ref": "#/components/schemas/ImportRow" },
+						"type": ["array", "null"]
+					}
+				},
+				"required": ["dry_run", "rows", "errors"],
+				"type": "object"
+			},
+			"ImportRow": {
+				"additionalProperties": false,
+				"properties": {
+					"error": { "type": "string" },
+					"first_name": { "type": "string" },
+					"last_name": { "type": "string" },
+					"line": { "format": "int64", "type": "integer" }
+				},
+				"required": ["line", "first_name", "last_name"],
+				"type": "object"
+			},
+			"Interview": {
+				"additionalProperties": false,
+				"properties": {
+					"created_at": { "format": "date-time", "type": "string" },
+					"description": { "type": "string" },
+					"has_scores": { "type": "boolean" },
+					"id": { "type": "string" },
+					"judges": {
+						"items": { "$ref": "#/components/schemas/JudgeInfo" },
+						"type": ["array", "null"]
+					},
+					"mode": { "enum": ["one_on_one", "panel"], "type": "string" },
+					"position": { "format": "int32", "maximum": 32767, "minimum": -32768, "type": "integer" },
+					"rubric_id": { "type": "string" },
+					"rubric_name": { "type": "string" },
+					"title": { "type": "string" },
+					"updated_at": { "format": "date-time", "type": "string" }
+				},
+				"required": [
+					"id",
+					"rubric_id",
+					"rubric_name",
+					"title",
+					"description",
+					"mode",
+					"position",
+					"created_at",
+					"updated_at",
+					"has_scores",
+					"judges"
+				],
+				"type": "object"
+			},
+			"InterviewCreateInput": {
+				"additionalProperties": false,
+				"properties": {
+					"description": { "maxLength": 1000, "type": "string" },
+					"judge_user_ids": {
+						"description": "User ids to assign as judges.",
+						"items": { "format": "uuid", "type": "string" },
+						"type": ["array", "null"]
+					},
+					"mode": { "enum": ["one_on_one", "panel"], "type": "string" },
+					"rubric_id": { "format": "uuid", "type": "string" },
+					"title": { "maxLength": 200, "minLength": 1, "type": "string" }
+				},
+				"required": ["title", "description", "mode", "rubric_id"],
+				"type": "object"
+			},
+			"InterviewUpdateInput": {
+				"additionalProperties": false,
+				"properties": {
+					"description": { "maxLength": 1000, "type": "string" },
+					"mode": { "enum": ["one_on_one", "panel"], "type": "string" },
+					"rubric_id": { "format": "uuid", "type": "string" },
+					"title": { "maxLength": 200, "minLength": 1, "type": "string" }
+				},
+				"type": "object"
+			},
+			"JudgeInfo": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "type": "string" },
+					"judge_id": { "type": "string" },
+					"last_name": { "type": "string" },
+					"scored": { "format": "int64", "type": "integer" },
+					"user_id": { "type": "string" }
+				},
+				"required": ["judge_id", "user_id", "first_name", "last_name", "scored"],
+				"type": "object"
+			},
+			"LoginInputBody": {
+				"additionalProperties": false,
+				"properties": {
+					"password": { "minLength": 1, "type": "string" },
+					"username": { "minLength": 1, "type": "string" }
+				},
+				"required": ["username", "password"],
+				"type": "object"
+			},
+			"MyCriterion": {
+				"additionalProperties": false,
+				"properties": {
+					"description": { "type": "string" },
+					"id": { "type": "string" },
+					"max_points": {
+						"format": "int32",
+						"maximum": 32767,
+						"minimum": -32768,
+						"type": "integer"
+					},
+					"title": { "type": "string" }
+				},
+				"required": ["id", "title", "description", "max_points"],
+				"type": "object"
+			},
+			"MyInterview": {
+				"additionalProperties": false,
+				"properties": {
+					"candidate_count": { "format": "int64", "type": "integer" },
+					"description": { "type": "string" },
+					"id": { "type": "string" },
+					"judge_id": { "type": "string" },
+					"mode": { "enum": ["one_on_one", "panel"], "type": "string" },
+					"rubric": { "$ref": "#/components/schemas/MyRubric" },
+					"title": { "type": "string" }
+				},
+				"required": ["id", "judge_id", "title", "description", "mode", "candidate_count", "rubric"],
+				"type": "object"
+			},
+			"MyRubric": {
+				"additionalProperties": false,
+				"properties": {
+					"criteria": {
+						"items": { "$ref": "#/components/schemas/MyCriterion" },
+						"type": ["array", "null"]
+					},
+					"id": { "type": "string" },
+					"name": { "type": "string" }
+				},
+				"required": ["id", "name", "criteria"],
+				"type": "object"
+			},
+			"NameInput": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"last_name": { "maxLength": 100, "minLength": 1, "type": "string" }
+				},
+				"required": ["first_name", "last_name"],
+				"type": "object"
+			},
+			"Reorder-interviewsRequest": {
+				"additionalProperties": false,
+				"properties": {
+					"ids": { "items": { "format": "uuid", "type": "string" }, "type": ["array", "null"] }
+				},
+				"required": ["ids"],
+				"type": "object"
+			},
+			"ResetPasswordInputBody": {
+				"additionalProperties": false,
+				"properties": { "password": { "maxLength": 72, "minLength": 8, "type": "string" } },
+				"required": ["password"],
+				"type": "object"
+			},
+			"ResultCandidate": {
+				"additionalProperties": false,
+				"properties": {
+					"average": { "format": "double", "type": "number" },
+					"complete": { "type": "boolean" },
+					"first_name": { "type": "string" },
+					"id": { "type": "string" },
+					"last_name": { "type": "string" },
+					"submissions": {
+						"items": { "$ref": "#/components/schemas/Submission" },
+						"type": ["array", "null"]
+					},
+					"sum": { "format": "int64", "type": "integer" }
+				},
+				"required": ["id", "first_name", "last_name", "submissions", "sum", "complete"],
+				"type": "object"
+			},
+			"ResultCriterion": {
+				"additionalProperties": false,
+				"properties": {
+					"id": { "type": "string" },
+					"max_points": {
+						"format": "int32",
+						"maximum": 32767,
+						"minimum": -32768,
+						"type": "integer"
+					},
+					"title": { "type": "string" }
+				},
+				"required": ["id", "title", "max_points"],
+				"type": "object"
+			},
+			"ResultInterview": {
+				"additionalProperties": false,
+				"properties": {
+					"criteria": {
+						"items": { "$ref": "#/components/schemas/ResultCriterion" },
+						"type": ["array", "null"]
+					},
+					"id": { "type": "string" },
+					"judges": {
+						"items": { "$ref": "#/components/schemas/ResultJudge" },
+						"type": ["array", "null"]
+					},
+					"mode": { "enum": ["one_on_one", "panel"], "type": "string" },
+					"selected": { "type": "boolean" },
+					"title": { "type": "string" }
+				},
+				"required": ["id", "title", "mode", "selected", "judges", "criteria"],
+				"type": "object"
+			},
+			"ResultJudge": {
+				"additionalProperties": false,
+				"properties": { "judge_id": { "type": "string" }, "name": { "type": "string" } },
+				"required": ["judge_id", "name"],
+				"type": "object"
+			},
+			"Results": {
+				"additionalProperties": false,
+				"properties": {
+					"candidates": {
+						"items": { "$ref": "#/components/schemas/ResultCandidate" },
+						"type": ["array", "null"]
+					},
+					"expected": { "format": "int64", "type": "integer" },
+					"fully_scored": { "format": "int64", "type": "integer" },
+					"interviews": {
+						"items": { "$ref": "#/components/schemas/ResultInterview" },
+						"type": ["array", "null"]
+					}
+				},
+				"required": ["interviews", "candidates", "expected", "fully_scored"],
+				"type": "object"
+			},
+			"Rubric": {
+				"additionalProperties": false,
+				"properties": {
+					"created_at": { "format": "date-time", "type": "string" },
+					"criteria": {
+						"items": { "$ref": "#/components/schemas/Criterion" },
+						"type": ["array", "null"]
+					},
+					"id": { "type": "string" },
+					"locked": { "type": "boolean" },
+					"name": { "type": "string" },
+					"updated_at": { "format": "date-time", "type": "string" },
+					"used_by": { "items": { "type": "string" }, "type": ["array", "null"] }
+				},
+				"required": ["id", "name", "created_at", "updated_at", "locked", "used_by", "criteria"],
+				"type": "object"
+			},
+			"SaveInput": {
+				"additionalProperties": false,
+				"properties": {
+					"criteria": {
+						"items": { "$ref": "#/components/schemas/CriterionInput" },
+						"maxItems": 50,
+						"minItems": 1,
+						"type": ["array", "null"]
+					},
+					"name": { "maxLength": 200, "minLength": 1, "type": "string" }
+				},
+				"required": ["name", "criteria"],
+				"type": "object"
+			},
+			"ScoreValue": {
+				"additionalProperties": false,
+				"properties": {
+					"criterion_id": { "format": "uuid", "type": "string" },
+					"value": { "format": "int32", "maximum": 32767, "minimum": 0, "type": "integer" }
+				},
+				"required": ["criterion_id", "value"],
+				"type": "object"
+			},
+			"Set-interview-judgesRequest": {
+				"additionalProperties": false,
+				"properties": {
+					"user_ids": { "items": { "format": "uuid", "type": "string" }, "type": ["array", "null"] }
+				},
+				"required": ["user_ids"],
+				"type": "object"
+			},
+			"Submission": {
+				"additionalProperties": false,
+				"properties": {
+					"edited_at": { "format": "date-time", "type": "string" },
+					"interview_id": { "type": "string" },
+					"judge_id": { "type": "string" },
+					"judge_name": { "type": "string" },
+					"submitted_at": { "format": "date-time", "type": "string" },
+					"total": { "format": "int64", "type": "integer" },
+					"values": {
+						"items": { "$ref": "#/components/schemas/SubmissionValue" },
+						"type": ["array", "null"]
+					}
+				},
+				"required": [
+					"interview_id",
+					"judge_id",
+					"judge_name",
+					"total",
+					"values",
+					"submitted_at",
+					"edited_at"
+				],
+				"type": "object"
+			},
+			"SubmissionValue": {
+				"additionalProperties": false,
+				"properties": {
+					"criterion_id": { "type": "string" },
+					"value": { "format": "int32", "maximum": 32767, "minimum": -32768, "type": "integer" }
+				},
+				"required": ["criterion_id", "value"],
+				"type": "object"
+			},
+			"SubmitInput": {
+				"additionalProperties": false,
+				"properties": {
+					"scores": {
+						"items": { "$ref": "#/components/schemas/ScoreValue" },
+						"maxItems": 50,
+						"type": ["array", "null"]
+					}
+				},
+				"required": ["scores"],
+				"type": "object"
+			},
+			"User": {
+				"additionalProperties": false,
+				"properties": {
+					"created_at": { "format": "date-time", "type": "string" },
+					"first_name": { "type": "string" },
+					"id": { "type": "string" },
+					"last_name": { "type": "string" },
+					"role": { "enum": ["admin", "judge"], "type": "string" },
+					"updated_at": { "format": "date-time", "type": "string" },
+					"username": { "type": "string" }
+				},
+				"required": [
+					"id",
+					"username",
+					"role",
+					"first_name",
+					"last_name",
+					"created_at",
+					"updated_at"
+				],
+				"type": "object"
+			},
+			"UserCreateInput": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"last_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"password": { "maxLength": 72, "minLength": 8, "type": "string" },
+					"role": { "enum": ["admin", "judge"], "type": "string" },
+					"username": {
+						"maxLength": 50,
+						"minLength": 3,
+						"pattern": "^[A-Za-z0-9._-]+$",
+						"type": "string"
+					}
+				},
+				"required": ["username", "password", "role", "first_name", "last_name"],
+				"type": "object"
+			},
+			"UserUpdateInput": {
+				"additionalProperties": false,
+				"properties": {
+					"first_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"last_name": { "maxLength": 100, "minLength": 1, "type": "string" },
+					"role": { "enum": ["admin", "judge"], "type": "string" },
+					"username": {
+						"maxLength": 50,
+						"minLength": 3,
+						"pattern": "^[A-Za-z0-9._-]+$",
+						"type": "string"
+					}
+				},
 				"type": "object"
 			}
 		}
@@ -84,6 +565,1006 @@
 					}
 				},
 				"summary": "Health check"
+			}
+		},
+		"/v1/auth/login": {
+			"post": {
+				"description": "Checks username and password and sets the session cookie.",
+				"operationId": "login",
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/LoginInputBody" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/User" } }
+						},
+						"description": "OK",
+						"headers": { "Set-Cookie": { "schema": { "type": "string" } } }
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Log in",
+				"tags": ["Authentication"]
+			}
+		},
+		"/v1/auth/logout": {
+			"post": {
+				"description": "Clears the session cookie.",
+				"operationId": "logout",
+				"responses": {
+					"204": {
+						"description": "No Content",
+						"headers": { "Set-Cookie": { "schema": { "type": "string" } } }
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Log out",
+				"tags": ["Authentication"]
+			}
+		},
+		"/v1/auth/me": {
+			"get": {
+				"operationId": "me",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/User" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Current user",
+				"tags": ["Authentication"]
+			}
+		},
+		"/v1/candidates": {
+			"get": {
+				"operationId": "list-candidates",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": { "$ref": "#/components/schemas/Candidate" },
+									"type": ["array", "null"]
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "List candidates",
+				"tags": ["Candidates"]
+			},
+			"post": {
+				"operationId": "create-candidate",
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/NameInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Candidate" } }
+						},
+						"description": "Created"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Create candidate",
+				"tags": ["Candidates"]
+			}
+		},
+		"/v1/candidates/import": {
+			"post": {
+				"description": "Header must be `first_name,last_name`. With dry_run=true nothing is saved and row errors are returned in the body.",
+				"operationId": "import-candidates",
+				"parameters": [
+					{ "explode": false, "in": "query", "name": "dry_run", "schema": { "type": "boolean" } }
+				],
+				"requestBody": {
+					"content": {
+						"multipart/form-data": {
+							"encoding": {
+								"file": { "contentType": "text/csv,application/vnd.ms-excel,text/plain" }
+							},
+							"schema": {
+								"properties": {
+									"file": {
+										"contentEncoding": "binary",
+										"contentMediaType": "application/octet-stream",
+										"format": "binary",
+										"type": "string"
+									}
+								},
+								"required": ["file"],
+								"type": "object"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/ImportOutputBody" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Import candidates from CSV",
+				"tags": ["Candidates"]
+			}
+		},
+		"/v1/candidates/{id}": {
+			"delete": {
+				"description": "Fails with 409 if the candidate has scores.",
+				"operationId": "delete-candidate",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Delete candidate",
+				"tags": ["Candidates"]
+			},
+			"patch": {
+				"operationId": "update-candidate",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/CandidateUpdateInput" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Candidate" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Update candidate",
+				"tags": ["Candidates"]
+			}
+		},
+		"/v1/events": {
+			"get": {
+				"description": "Invalidation hints: which topic changed. Refetch the matching GET endpoints.",
+				"operationId": "events",
+				"responses": {
+					"200": {
+						"content": {
+							"text/event-stream": {
+								"schema": {
+									"description": "Each oneOf object in the array represents one possible Server Sent Events (SSE) message, serialized as UTF-8 text according to the SSE specification.",
+									"items": {
+										"oneOf": [
+											{
+												"properties": {
+													"data": { "$ref": "#/components/schemas/Event" },
+													"event": {
+														"const": "message",
+														"description": "The event name.",
+														"type": "string"
+													},
+													"id": {
+														"description": "The event ID.",
+														"oneOf": [{ "type": "integer" }, { "type": "string" }]
+													},
+													"retry": {
+														"description": "The retry time in milliseconds.",
+														"type": "integer"
+													}
+												},
+												"required": ["data"],
+												"title": "Event message",
+												"type": "object"
+											}
+										]
+									},
+									"title": "Server Sent Events",
+									"type": "array"
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Server-sent events",
+				"tags": ["Realtime"]
+			}
+		},
+		"/v1/interviews": {
+			"get": {
+				"operationId": "list-interviews",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": { "$ref": "#/components/schemas/Interview" },
+									"type": ["array", "null"]
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "List interviews with judges",
+				"tags": ["Interviews"]
+			},
+			"post": {
+				"operationId": "create-interview",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/InterviewCreateInput" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Interview" } }
+						},
+						"description": "Created"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Create interview",
+				"tags": ["Interviews"]
+			}
+		},
+		"/v1/interviews/order": {
+			"put": {
+				"operationId": "reorder-interviews",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/Reorder-interviewsRequest" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Save interview order",
+				"tags": ["Interviews"]
+			}
+		},
+		"/v1/interviews/{id}": {
+			"delete": {
+				"description": "Removes judge assignments too. Fails with 409 if any judge has scores.",
+				"operationId": "delete-interview",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Delete interview",
+				"tags": ["Interviews"]
+			},
+			"patch": {
+				"description": "The rubric and mode cannot change once the interview has scores (409).",
+				"operationId": "update-interview",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/InterviewUpdateInput" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Interview" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Update interview",
+				"tags": ["Interviews"]
+			}
+		},
+		"/v1/interviews/{id}/board": {
+			"get": {
+				"description": "From the calling judge's point of view. 403 if not assigned to the interview.",
+				"operationId": "interview-board",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Board" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Candidates with status and my scores",
+				"tags": ["Scores"]
+			}
+		},
+		"/v1/interviews/{id}/candidates/{candidateId}/scores": {
+			"delete": {
+				"operationId": "clear-submission",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					},
+					{
+						"in": "path",
+						"name": "candidateId",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					},
+					{
+						"description": "The judge id whose scores to clear.",
+						"explode": false,
+						"in": "query",
+						"name": "judge",
+						"required": true,
+						"schema": {
+							"description": "The judge id whose scores to clear.",
+							"format": "uuid",
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Clear one judge's scores for a candidate",
+				"tags": ["Scores"]
+			},
+			"put": {
+				"description": "Idempotent upsert. Every criterion is required. A 1-on-1 candidate already scored by another judge gets 409.",
+				"operationId": "submit-scores",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					},
+					{
+						"in": "path",
+						"name": "candidateId",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/SubmitInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/BoardCandidate" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Submit or update my scores for a candidate",
+				"tags": ["Scores"]
+			}
+		},
+		"/v1/interviews/{id}/judges": {
+			"put": {
+				"operationId": "set-interview-judges",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/Set-interview-judgesRequest" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Interview" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Replace the judges of an interview",
+				"tags": ["Interviews"]
+			}
+		},
+		"/v1/me/interviews": {
+			"get": {
+				"operationId": "list-my-interviews",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": { "$ref": "#/components/schemas/MyInterview" },
+									"type": ["array", "null"]
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Interviews I judge, with rubric",
+				"tags": ["Interviews"]
+			}
+		},
+		"/v1/results": {
+			"get": {
+				"description": "Repeat `interview` to select the graded interviews. With none, the most recently created interview of each mode is used. The average is set only when every expected total is in.",
+				"operationId": "results",
+				"parameters": [
+					{
+						"explode": true,
+						"in": "query",
+						"name": "interview",
+						"schema": { "items": { "format": "uuid", "type": "string" }, "type": ["array", "null"] }
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Results" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Candidates with judge totals and average",
+				"tags": ["Results"]
+			}
+		},
+		"/v1/results.xlsx": {
+			"get": {
+				"description": "Same `interview` selection as /results.",
+				"operationId": "results-xlsx",
+				"parameters": [
+					{
+						"explode": true,
+						"in": "query",
+						"name": "interview",
+						"schema": { "items": { "format": "uuid", "type": "string" }, "type": ["array", "null"] }
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+								"schema": {
+									"contentMediaType": "application/octet-stream",
+									"format": "binary",
+									"type": "string"
+								}
+							}
+						},
+						"description": "The workbook"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Download results as .xlsx",
+				"tags": ["Results"]
+			}
+		},
+		"/v1/rubrics": {
+			"get": {
+				"operationId": "list-rubrics",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": { "$ref": "#/components/schemas/Rubric" },
+									"type": ["array", "null"]
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "List rubrics",
+				"tags": ["Rubrics"]
+			},
+			"post": {
+				"description": "Criteria points must total 100.",
+				"operationId": "create-rubric",
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/SaveInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Rubric" } }
+						},
+						"description": "Created"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Create rubric",
+				"tags": ["Rubrics"]
+			}
+		},
+		"/v1/rubrics/{id}": {
+			"delete": {
+				"description": "Fails with 409 while an interview uses it.",
+				"operationId": "delete-rubric",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Delete rubric",
+				"tags": ["Rubrics"]
+			},
+			"get": {
+				"operationId": "get-rubric",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Rubric" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Get rubric",
+				"tags": ["Rubrics"]
+			},
+			"patch": {
+				"description": "Criteria are saved together with the rubric, in order. Once a score uses the rubric, criteria cannot be added or removed and points cannot change (409).",
+				"operationId": "update-rubric",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/SaveInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/Rubric" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Update rubric and its criteria",
+				"tags": ["Rubrics"]
+			}
+		},
+		"/v1/users": {
+			"get": {
+				"operationId": "list-users",
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": { "$ref": "#/components/schemas/User" },
+									"type": ["array", "null"]
+								}
+							}
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "List users",
+				"tags": ["Users"]
+			},
+			"post": {
+				"operationId": "create-user",
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/UserCreateInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"201": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/User" } }
+						},
+						"description": "Created"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Create user",
+				"tags": ["Users"]
+			}
+		},
+		"/v1/users/{id}": {
+			"delete": {
+				"description": "Also removes the user's judge assignments. Fails with 409 if the user has scores.",
+				"operationId": "delete-user",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Delete user",
+				"tags": ["Users"]
+			},
+			"patch": {
+				"operationId": "update-user",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": { "schema": { "$ref": "#/components/schemas/UserUpdateInput" } }
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": { "schema": { "$ref": "#/components/schemas/User" } }
+						},
+						"description": "OK"
+					},
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Update user",
+				"tags": ["Users"]
+			}
+		},
+		"/v1/users/{id}/password": {
+			"post": {
+				"operationId": "reset-user-password",
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": { "format": "uuid", "type": "string" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/ResetPasswordInputBody" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Reset user password",
+				"tags": ["Users"]
 			}
 		}
 	}

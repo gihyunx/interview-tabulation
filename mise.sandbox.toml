@@ -1,0 +1,5 @@
+# Sandbox: same Postgres, separate database for test interviews and candidates.
+# Run any task with `mise -E sandbox run <task>`, e.g. `mise -E sandbox run dev`.
+[env]
+DATABASE_URL = "postgresql://{{env.DB_USER}}:{{env.DB_PASSWORD}}@{{env.DB_HOST}}:{{env.DB_PORT}}/{{env.DB_NAME}}_sandbox"
+GOOSE_DBSTRING = "{{env.DATABASE_URL}}"

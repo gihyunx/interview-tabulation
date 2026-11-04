@@ -17,18 +17,18 @@ func Setup(api huma.API, pool *pgxpool.Pool, cfg config.Config, bus *event.Bus) 
 	newHandler(api, svc, cfg.JWTSecret, cfg.AppEnv == "production").setupRoutes()
 }
 
-// SeedAdmin creates the first admin. It does nothing if the username exists.
-func SeedAdmin(ctx context.Context, pool *pgxpool.Pool, username, password, firstName, lastName string) error {
+// SeedUser creates a user for seeding. It does nothing if the username exists.
+func SeedUser(ctx context.Context, pool *pgxpool.Pool, role auth.Role, username, password, firstName, lastName string) error {
 	svc := &service{pool: pool}
 	_, err := svc.create(ctx, userCreateInput{
 		Username:  username,
 		Password:  password,
-		Role:      auth.RoleAdmin,
+		Role:      role,
 		FirstName: firstName,
 		LastName:  lastName,
 	})
 	if errors.Is(err, errUsernameTaken) {
-		slog.Info("seed: admin already exists", "username", username)
+		slog.Info("seed: user already exists", "username", username)
 		return nil
 	}
 	return err

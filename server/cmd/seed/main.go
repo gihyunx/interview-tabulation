@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log/slog"
 	"os"
 
 	"github.com/gihyunx/interview-tabulation/config"
+	"github.com/gihyunx/interview-tabulation/internal/auth"
 	"github.com/gihyunx/interview-tabulation/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -13,6 +15,8 @@ import (
 )
 
 func main() {
+	sample := flag.Bool("sample", false, "also add the sample rubric, interview and candidates (sandbox only)")
+	flag.Parse()
 	_ = godotenv.Load()
 
 	cfg := config.NewConfig()
@@ -29,9 +33,17 @@ func main() {
 	}
 	defer pool.Close()
 
-	if err := user.SeedAdmin(ctx, pool, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminFirstName, cfg.AdminLastName); err != nil {
+	if err := user.SeedUser(ctx, pool, auth.RoleAdmin, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminFirstName, cfg.AdminLastName); err != nil {
 		slog.Error("seed", "error", err)
 		pool.Close()
 		os.Exit(1)
+	}
+
+	if *sample {
+		if err := seedSample(ctx, pool); err != nil {
+			slog.Error("seed sample", "error", err)
+			pool.Close()
+			os.Exit(1)
+		}
 	}
 }

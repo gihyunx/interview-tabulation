@@ -95,10 +95,21 @@ description = "Create the first admin from ADMIN_* env vars (safe to re-run)"
 dir = "server"
 run = "go run ./cmd/seed"
 
-[tasks."db:start"]
-description = "Start Postgres and wait until healthy"
+[tasks."seed:sample"]
+description = "Seed admin plus sample rubric, interview and candidates (sandbox only)"
 dir = "server"
-run = "docker compose up -d --wait postgres"
+run = "go run ./cmd/seed -sample"
+
+[tasks."db:start"]
+description = "Start Postgres, wait until healthy, create the database if missing"
+dir = "server"
+# ponytail: db name is the last path segment of DATABASE_URL (no query params)
+run = """
+docker compose up -d --wait postgres
+db="${DATABASE_URL##*/}"
+docker compose exec -T postgres psql -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 \
+  || docker compose exec -T postgres createdb -U "$DB_USER" "$db"
+"""
 
 [tasks."db:stop"]
 description = "Stop Postgres (data kept)"

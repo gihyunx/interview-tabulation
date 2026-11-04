@@ -66,6 +66,19 @@ mise run db:create <name>
 > [!IMPORTANT]
 > Always create migration files with this command. Never write or rename them by hand, and never edit a migration that was already applied. Add a new one instead.
 
+### Sandbox
+
+Use the sandbox for test interviews and candidates. It is a separate database (`tabulation_sandbox`) in the same Postgres, so it never mixes with the real data in `tabulation`.
+
+Add `-E sandbox` to any task:
+
+```sh
+mise -E sandbox run seed:sample   # admin, rubric, 10 candidates, 1-on-1 (judge1-3) and panel (judge4-6) interviews; judge password "password"
+mise -E sandbox run dev    # or: mise -E sandbox run start
+```
+
+Leave out `-E sandbox` to use the real data. The override lives in `mise.sandbox.toml`.
+
 ### Testing
 
 ```sh

@@ -267,7 +267,7 @@ func TestDelete(t *testing.T) {
 func TestSeedAdminIsIdempotent(t *testing.T) {
 	name := fmt.Sprintf("seed-%s", uuid.NewString()[:8])
 	for range 2 {
-		require.NoError(t, SeedAdmin(context.Background(), testPool, name, "password123", "A", "B"))
+		require.NoError(t, SeedUser(context.Background(), testPool, auth.RoleAdmin, name, "password123", "A", "B"))
 	}
 	var n int
 	require.NoError(t, testPool.QueryRow(context.Background(), `SELECT count(*) FROM users WHERE username = $1 AND role = 'admin'`, name).Scan(&n))

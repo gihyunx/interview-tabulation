@@ -11,7 +11,7 @@
 		candidates: Candidate[];
 		selectedId: string | null;
 		onselect: (id: string) => void;
-		// Called after a row is tapped or clicked (not on search, scroll or arrow keys), e.g. to close a drawer.
+		// Called after a row is tapped or clicked (not on search or arrow keys), e.g. to close a drawer.
 		onchoose?: () => void;
 		// Change it to scroll the selected row back to the middle, e.g. after a switch was cancelled.
 		recenter?: number;
@@ -64,8 +64,7 @@
 		} else if (e.key === "ArrowUp") {
 			move(-1);
 		} else {
-			userScrolled = true; // Page Down, Home, Space and the like scroll the list natively
-			return;
+			return; // Page Down, Home, Space and the like scroll the list natively
 		}
 		e.preventDefault();
 	}
@@ -85,27 +84,18 @@
 		return () => observer.disconnect();
 	}
 
-	// Scroll the selected row to the middle. Re-runs when the selection or the list changes.
+	// Scroll the selected row to the middle. Re-runs when the selection or search changes, not on
+	// live list updates, so it never yanks the list while the judge is scrolling.
 	function centerSelected(list: HTMLElement) {
 		void selectedId;
-		void shown;
+		void search;
 		void recenter;
-		// A selection (click, keys, search, or a settled scroll) wins over any scroll still in flight:
-		// drop the pending settle and stop following the scroll until the judge scrolls again.
-		clearTimeout(settleTimer);
-		userScrolled = false;
-		skipMomentum = true;
-		scrollToSelected(list);
-		arc(list);
-	}
-	function scrollToSelected(list: HTMLElement) {
 		const row = list.querySelector<HTMLElement>("[aria-selected=true]");
 		if (row) {
 			const top = row.offsetTop + row.offsetHeight / 2 - list.clientHeight / 2;
-			if (Math.abs(list.scrollTop - top) > 1) {
-				list.scrollTo({ top, behavior: "smooth" });
-			}
+			list.scrollTo({ top, behavior: "smooth" });
 		}
+		arc(list);
 	}
 
 	// Song-wheel look: rows ease aside and fade with their distance from the middle of the list,
@@ -117,61 +107,12 @@
 			row.style.setProperty("--d", Math.min(d, 1).toFixed(3));
 		}
 	}
-	// Song-wheel selection: the middle of the list is the selection. Scrolling snaps to the nearest
-	// selectable row, and once it stops, that row is selected. Only after the judge scrolls: the
-	// browser's own snap when the list first shows must not pick a candidate for them.
-	let settleTimer: ReturnType<typeof setTimeout> | undefined;
-	let userScrolled = false;
-	const markUserScroll = () => (userScrolled = true);
-
-	// A trackpad keeps sending wheel events while it coasts, also after a click. Those must not scroll
-	// away from what was just picked. Coasting events come every frame; a new gesture starts after a
-	// pause, and only that counts as the judge scrolling again.
-	let skipMomentum = false;
-	let lastWheel = 0;
-	function guardWheel(list: HTMLElement) {
-		const onwheel = (e: WheelEvent) => {
-			const newGesture = e.timeStamp - lastWheel > 100;
-			lastWheel = e.timeStamp;
-			if (skipMomentum && !newGesture) {
-				e.preventDefault();
-				return;
-			}
-			skipMomentum = false;
-			markUserScroll();
-		};
-		// Not passive, so coasting events can be cancelled.
-		list.addEventListener("wheel", onwheel, { passive: false });
-		return () => list.removeEventListener("wheel", onwheel);
-	}
-	// Dragging the scrollbar scrolls; pressing a row is a click, not a scroll.
-	const onpointerdown = (e: PointerEvent) => e.target === e.currentTarget && markUserScroll();
-	function onscroll(e: Event & { currentTarget: HTMLElement }) {
-		const list = e.currentTarget;
+	// Scrolling only moves the list; a candidate is selected by click, tap, arrow keys or search.
+	const onscroll = (e: Event & { currentTarget: HTMLElement }) => arc(e.currentTarget);
+	// Live updates add, remove or reorder rows without a scroll.
+	function arcRows(list: HTMLElement) {
+		void shown;
 		arc(list);
-		clearTimeout(settleTimer);
-		settleTimer = setTimeout(() => settle(list), 150);
-	}
-	function settle(list: HTMLElement) {
-		if (!userScrolled) {
-			// Not the judge's scroll (e.g. a wheel animation that outran a click): go back to the selection.
-			scrollToSelected(list);
-			return;
-		}
-		const mid = list.scrollTop + list.clientHeight / 2;
-		let best: HTMLElement | undefined;
-		let bestD = Infinity;
-		for (const row of list.querySelectorAll<HTMLElement>("[role=option]:not(:disabled)")) {
-			const d = Math.abs(row.offsetTop + row.offsetHeight / 2 - mid);
-			if (d < bestD) {
-				best = row;
-				bestD = d;
-			}
-		}
-		const id = best?.dataset.id;
-		if (id && id !== selectedId) {
-			onselect(id);
-		}
 	}
 
 	// Indent from the left so the right edge stays put and nothing is clipped.
@@ -211,16 +152,14 @@
 
 	<div
 		{@attach keepPadded}
-		{@attach guardWheel}
 		{@attach centerSelected}
+		{@attach arcRows}
 		{onscroll}
-		ontouchstart={markUserScroll}
-		{onpointerdown}
 		role="listbox"
 		aria-label="Candidates"
 		tabindex="0"
 		{onkeydown}
-		class="relative min-h-0 flex-1 snap-y snap-mandatory space-y-2 overflow-x-hidden overflow-y-auto rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+		class="relative min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 	>
 		{#each shown as c (c.id)}
 			{@const active = c.id === selectedId}
@@ -240,7 +179,6 @@
 				class={[
 					// Every row is the same height, so selecting one never shifts the others.
 					"ml-auto flex w-full items-center justify-between gap-3 rounded-xl border px-5 py-4 text-left transition-colors",
-					selectable(c) && "snap-center",
 					active
 						? "border-primary bg-primary text-primary-foreground shadow-lg"
 						: "bg-card shadow-xs hover:border-ring",

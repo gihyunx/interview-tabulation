@@ -68,7 +68,7 @@ mise run db:create <name>
 
 ### Sandbox
 
-Use the sandbox for test interviews and candidates. It is a separate database (`tabulation_sandbox`) in the same Postgres, so it never mixes with the real data in `tabulation`.
+Use the sandbox for test interviews and candidates. It is a separate database (`tabulation_sandbox`), so it never mixes with the real data in `tabulation`.
 
 Add `-E sandbox` to any task:
 

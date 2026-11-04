@@ -311,7 +311,8 @@
 										inputmode="numeric"
 										min={0}
 										max={c.max_points}
-										class="no-spinner h-12 w-20 text-center text-xl font-bold md:text-xl"
+										placeholder="--"
+										class="no-spinner h-12 w-20 border-2 border-muted-foreground/50 text-center text-xl font-bold shadow-sm placeholder:text-muted-foreground/60 md:text-xl"
 										aria-label={`${c.title} score`}
 										aria-invalid={attempted && values[c.id] === undefined}
 										value={values[c.id] ?? ""}

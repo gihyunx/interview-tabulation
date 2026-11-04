@@ -17,6 +17,7 @@ description = "Install server and web dependencies"
 run = [
   "cd server && go mod download",
   "cd web && pnpm install --frozen-lockfile",
+  "cd web && pnpm exec playwright install chromium",
 ]
 
 [tasks.setup]
@@ -73,22 +74,42 @@ description = "Format code"
 run = ["cd server && go fmt ./...", "cd web && pnpm format"]
 
 [tasks.test]
-description = "Run all tests (requires Docker)"
+description = "Run lint, Go tests, Vitest and Playwright e2e (requires Docker)"
 depends = ["lint"]
-dir = "server"
-run = "go test ./..."
+run = [
+  "cd server && go test ./...",
+  "cd web && pnpm test",
+  "cd web && pnpm test:e2e",
+]
 
 [tasks."gen:api"]
 description = "Generate web API types from the OpenAPI spec"
 run = [
   "cd server && go run ./cmd/openapi > ../web/src/lib/api/openapi.json",
   "cd web && pnpm openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts",
+  "cd web && pnpm prettier --write src/lib/api/openapi.json src/lib/api/schema.d.ts",
 ]
 
-[tasks."db:start"]
-description = "Start Postgres and wait until healthy"
+[tasks.seed]
+description = "Create the first admin from ADMIN_* env vars (safe to re-run)"
 dir = "server"
-run = "docker compose up -d --wait postgres"
+run = "go run ./cmd/seed"
+
+[tasks."seed:sample"]
+description = "Seed admin plus sample rubric, interview and candidates (sandbox only)"
+dir = "server"
+run = "go run ./cmd/seed -sample"
+
+[tasks."db:start"]
+description = "Start Postgres, wait until healthy, create the database if missing"
+dir = "server"
+# ponytail: db name is the last path segment of DATABASE_URL (no query params)
+run = """
+docker compose up -d --wait postgres
+db="${DATABASE_URL##*/}"
+docker compose exec -T postgres psql -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db'" | grep -q 1 \
+  || docker compose exec -T postgres createdb -U "$DB_USER" "$db"
+"""
 
 [tasks."db:stop"]
 description = "Stop Postgres (data kept)"

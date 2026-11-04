@@ -33,11 +33,19 @@ Install dependencies, start the database, and run migrations:
 mise run setup
 ```
 
+Create the first admin (uses the `ADMIN_*` values in `server/.env`, safe to run again):
+
+```sh
+mise run seed
+```
+
 Run the server and the web app:
 
 ```sh
 mise run dev
 ```
+
+Log in at http://localhost:5173 with the admin username and password from `server/.env`. Create judges on the Users page, then rubrics, interviews and candidates, and assign judges to interviews.
 
 | URL                          | What               |
 | ---------------------------- | ------------------ |
@@ -58,13 +66,29 @@ mise run db:create <name>
 > [!IMPORTANT]
 > Always create migration files with this command. Never write or rename them by hand, and never edit a migration that was already applied. Add a new one instead.
 
+### Sandbox
+
+Use the sandbox for test interviews and candidates. It is a separate database (`tabulation_sandbox`), so it never mixes with the real data in `tabulation`.
+
+Add `-E sandbox` to any task:
+
+```sh
+mise -E sandbox run seed:sample   # admin, rubric, 10 candidates, 1-on-1 (judge1-3) and panel (judge4-6) interviews; judge password "password"
+mise -E sandbox run dev    # or: mise -E sandbox run start
+```
+
+Leave out `-E sandbox` to use the real data. The override lives in `mise.sandbox.toml`.
+
 ### Testing
 
 ```sh
 mise run test
 ```
 
-Requires Docker to be running. Integration tests start their own Postgres container with [Testcontainers](https://testcontainers.com/).
+Runs lint, the Go tests, Vitest and the Playwright end-to-end test. Requires Docker to be running.
+
+- Go integration tests start their own Postgres container with [Testcontainers](https://testcontainers.com/).
+- The e2e test starts its own API (port 8081) and web app (port 5174) against a throwaway database named `tabulation_e2e` in the Postgres from `mise run db:start`. It never touches your dev data. `mise run deps` installs the Chromium it uses.
 
 ### Tasks
 

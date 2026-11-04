@@ -54,7 +54,7 @@ func run(cfg config.Config) error {
 	}
 
 	router := http.NewServeMux()
-	api.New(router, pool)
+	api.New(router, pool, cfg, ctx.Done())
 
 	server := http.Server{
 		Addr:    cfg.Host + ":" + cfg.Port,

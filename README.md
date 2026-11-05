@@ -79,6 +79,49 @@ mise -E sandbox run dev    # or: mise -E sandbox run start
 
 Leave out `-E sandbox` to use the real data. The override lives in `mise.sandbox.toml`.
 
+### Running for the event
+
+`mise run start` builds the web app and serves it together with the API on port 8080, on all network interfaces:
+
+```sh
+mise run start
+```
+
+Open http://localhost:8080 on the machine running it. To reach it from other
+devices, use [Tailscale](https://tailscale.com/). Both options below need an
+internet connection (Wi-Fi or mobile data) on the server machine and on every
+device.
+
+#### Option A: Tailscale Funnel (recommended)
+
+Funnel gives the app a public HTTPS link. Users open it in any browser and do not need Tailscale installed.
+
+```sh
+sudo tailscale funnel --bg 8080
+```
+
+The link is printed, for example `https://<machine>.<tailnet>.ts.net`. Check it with `tailscale funnel status`.
+To stop it:
+
+```sh
+sudo tailscale funnel --https=443 off
+```
+
+> [!IMPORTANT]
+> The app is public while Funnel is on, and the login screen is the only protection.
+
+#### Option B: Tailnet only
+
+Every device installs Tailscale and joins your tailnet, or you share the server machine with them. Nothing is public. Devices open the server's Tailscale IP over plain HTTP, for example `http://100.x.y.z:8080` (find it with `tailscale ip -4`).
+
+Browsers only keep the login cookie over HTTPS by default, so allow it over HTTP by adding this to `server/.env`:
+
+```sh
+COOKIE_SECURE=false
+```
+
+Traffic is still encrypted, because Tailscale encrypts everything between devices.
+
 ### Testing
 
 ```sh

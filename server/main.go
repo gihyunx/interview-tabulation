@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -55,6 +57,8 @@ func run(cfg config.Config) error {
 
 	router := http.NewServeMux()
 	api.New(router, pool, cfg, ctx.Done())
+	router.Handle("/v1/", http.NotFoundHandler())
+	router.Handle("/", spaHandler(cfg.WebDir))
 
 	server := http.Server{
 		Addr:    cfg.Host + ":" + cfg.Port,
@@ -98,6 +102,33 @@ func corsMiddleware(allowedOrigins []string, next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+// spaHandler serves the built web app from dir, falling back to 200.html
+// so client-side routes load on refresh. Uses the build's precompressed .gz
+// files when the client accepts gzip.
+func spaHandler(dir string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Join(dir, filepath.Clean("/"+r.URL.Path))
+		if info, err := os.Stat(path); err != nil || info.IsDir() {
+			path = filepath.Join(dir, "200.html")
+		}
+
+		// Hashed filenames never change content, so browsers can keep them.
+		if strings.HasPrefix(r.URL.Path, "/_app/immutable/") {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		}
+
+		w.Header().Add("Vary", "Accept-Encoding")
+		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			if _, err := os.Stat(path + ".gz"); err == nil {
+				w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(path)))
+				w.Header().Set("Content-Encoding", "gzip")
+				path += ".gz"
+			}
+		}
+		http.ServeFile(w, r, path)
 	})
 }
 

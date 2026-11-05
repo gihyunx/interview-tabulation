@@ -14,7 +14,7 @@ import (
 
 func Setup(api huma.API, pool *pgxpool.Pool, cfg config.Config, bus *event.Bus) {
 	svc := &service{pool: pool, jwtSecret: cfg.JWTSecret, bus: bus}
-	newHandler(api, svc, cfg.JWTSecret, cfg.AppEnv == "production").setupRoutes()
+	newHandler(api, svc, cfg.JWTSecret, cfg.CookieSecure).setupRoutes()
 }
 
 // SeedUser creates a user for seeding. It does nothing if the username exists.

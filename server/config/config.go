@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -14,6 +15,7 @@ type Config struct {
 	LogLevel       string
 	WebDir         string
 	JWTSecret      string
+	CookieSecure   bool
 
 	AdminUsername  string
 	AdminPassword  string
@@ -22,15 +24,18 @@ type Config struct {
 }
 
 func NewConfig() Config {
+	appEnv := getEnvOrDefault("APP_ENV", "development")
 	return Config{
 		Host:           getEnvOrDefault("HOST", "localhost"),
 		Port:           getEnvOrDefault("PORT", "8080"),
 		DatabaseURL:    requireEnv("DATABASE_URL"),
 		AllowedOrigins: strings.Split(getEnvOrDefault("ALLOWED_ORIGINS", "http://localhost:5173"), ","),
-		AppEnv:         getEnvOrDefault("APP_ENV", "development"),
+		AppEnv:         appEnv,
 		LogLevel:       getEnvOrDefault("LOG_LEVEL", "info"),
 		WebDir:         getEnvOrDefault("WEB_DIR", "../web/build"),
 		JWTSecret:      requireEnv("JWT_SECRET"),
+		// Off for plain http over Tailscale, which is already encrypted.
+		CookieSecure: getEnvOrDefault("COOKIE_SECURE", strconv.FormatBool(appEnv == "production")) == "true",
 
 		AdminUsername:  os.Getenv("ADMIN_USERNAME"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),

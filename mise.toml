@@ -51,7 +51,7 @@ mise run dev:server ::: dev:web
 [tasks.build]
 description = "Build web and server"
 run = [
-  "cd web && pnpm build",
+  "cd web && BACKEND_URL= pnpm build",
   "cd server && go build -o bin/server .",
 ]
 

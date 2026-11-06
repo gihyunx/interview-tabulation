@@ -217,6 +217,7 @@
 			count < 3 && !(error instanceof ApiError && error.status < 500),
 		onSuccess: async (candidateId) => {
 			clearDraft(judgeId, interviewId, candidateId);
+			attempted = false;
 			toast.success(isUpdate ? "Scores updated." : "Scores submitted.");
 			// Stay on this candidate; the judge picks the next one.
 			await queryClient.invalidateQueries({ queryKey: ["board", interviewId] });

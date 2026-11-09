@@ -42,7 +42,7 @@ func (h *handler) setupRoutes() {
 	huma.Register(h.api, huma.Operation{
 		OperationID: "import-candidates", Method: http.MethodPost, Path: "/candidates/import",
 		Tags: tags, Summary: "Import candidates from CSV",
-		Description: "Header must be `first_name,last_name`. With dry_run=true nothing is saved and row errors are returned in the body.",
+		Description: "Header must be `first_name,last_name` or `number,first_name,last_name`. Without a number column, candidates are numbered after the highest existing number, in file order. With dry_run=true nothing is saved and row errors are returned in the body.",
 		Middlewares: admin,
 	}, h.importCSV)
 }
@@ -122,6 +122,8 @@ func mapErr(err error) error {
 		return nil
 	case errors.Is(err, errNotFound):
 		return huma.Error404NotFound("Candidate not found.")
+	case errors.Is(err, errNumberTaken):
+		return huma.Error409Conflict("Another candidate already has this number.")
 	case errors.Is(err, errHasScores):
 		return huma.Error409Conflict("This candidate already has scores and cannot be deleted. Clear their scores first.")
 	default:

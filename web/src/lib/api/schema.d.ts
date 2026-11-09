@@ -107,7 +107,7 @@ export interface paths {
 		put?: never;
 		/**
 		 * Import candidates from CSV
-		 * @description Header must be `first_name,last_name`. With dry_run=true nothing is saved and row errors are returned in the body.
+		 * @description Header must be `first_name,last_name` or `number,first_name,last_name`. Without a number column, candidates are numbered after the highest existing number, in file order. With dry_run=true nothing is saved and row errors are returned in the body.
 		 */
 		post: operations["import-candidates"];
 		delete?: never;
@@ -446,6 +446,8 @@ export interface components {
 			id: string;
 			last_name: string;
 			my_scores: components["schemas"]["ScoreValue"][] | null;
+			/** Format: int64 */
+			number: number;
 			scored_by?: string;
 			/** @enum {string} */
 			status: "unscored" | "scored" | "scored_by_other";
@@ -458,12 +460,16 @@ export interface components {
 			first_name: string;
 			id: string;
 			last_name: string;
+			/** Format: int64 */
+			number: number;
 			/** Format: date-time */
 			updated_at: string;
 		};
 		CandidateUpdateInput: {
 			first_name?: string;
 			last_name?: string;
+			/** Format: int64 */
+			number?: number;
 		};
 		Criterion: {
 			description: string;
@@ -544,6 +550,8 @@ export interface components {
 			last_name: string;
 			/** Format: int64 */
 			line: number;
+			/** Format: int64 */
+			number?: number;
 		};
 		Interview: {
 			/** Format: date-time */
@@ -618,6 +626,8 @@ export interface components {
 		NameInput: {
 			first_name: string;
 			last_name: string;
+			/** Format: int64 */
+			number?: number;
 		};
 		"Reorder-interviewsRequest": {
 			ids: string[] | null;
@@ -632,6 +642,8 @@ export interface components {
 			first_name: string;
 			id: string;
 			last_name: string;
+			/** Format: int64 */
+			number: number;
 			submissions: components["schemas"]["Submission"][] | null;
 			/** Format: int64 */
 			sum: number;

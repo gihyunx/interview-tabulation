@@ -109,8 +109,9 @@ func insertSample(ctx context.Context, tx pgx.Tx) error {
 		first[i], last[i] = c[0], c[1]
 	}
 	if _, err := tx.Exec(ctx, `
-			INSERT INTO candidate (first_name, last_name)
-			SELECT * FROM unnest(@first::text[], @last::text[])`,
+			INSERT INTO candidate (number, first_name, last_name)
+			SELECT (SELECT COALESCE(MAX(number), 0) FROM candidate) + n, f, l
+			FROM unnest(@first::text[], @last::text[]) WITH ORDINALITY AS t(f, l, n)`,
 		pgx.NamedArgs{"first": first, "last": last}); err != nil {
 		return err
 	}

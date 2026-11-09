@@ -180,7 +180,7 @@
 	$effect(() => {
 		if (chosen?.status === "scored_by_other" && warnedFor !== chosen.id) {
 			warnedFor = chosen.id;
-			toast.error(`${chosen.last_name} was scored by ${chosen.scored_by}.`);
+			toast.error(`Candidate ${chosen.number} was scored by ${chosen.scored_by}.`);
 		}
 	});
 
@@ -285,7 +285,8 @@
 			{:else}
 				<p class="mt-1 mb-6 text-2xl tracking-tight text-muted-foreground">
 					Scoring
-					<span class="font-bold text-foreground">{selected.last_name}, {selected.first_name}</span>
+					<span class="font-bold text-foreground">candidate #{selected.number}</span>
+					<span class="text-lg">({selected.last_name}, {selected.first_name})</span>
 				</p>
 				{#if restored}
 					<p class="mb-4 rounded-md bg-warning p-2 text-sm text-warning-foreground" role="status">
@@ -425,7 +426,7 @@
 
 <ConfirmDialog
 	bind:open={reviewing}
-	title={`${isUpdate ? "Update" : "Submit"} scores for ${selected?.last_name}, ${selected?.first_name}?`}
+	title={`${isUpdate ? "Update" : "Submit"} scores for candidate ${selected?.number} (${selected?.last_name}, ${selected?.first_name})?`}
 	description="Check the scores below. You can edit them later."
 	confirmLabel={isUpdate ? "Update" : "Submit"}
 	onconfirm={() => selectedId && submit.mutate(selectedId)}

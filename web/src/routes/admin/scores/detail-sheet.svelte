@@ -48,7 +48,10 @@
 	>
 		<Sheet.Header>
 			<Sheet.Title class="text-2xl font-bold tracking-tight"
-				>{candidate?.last_name}, {candidate?.first_name}</Sheet.Title
+				>Candidate {candidate?.number}
+				<span class="block text-base font-normal text-muted-foreground"
+					>{candidate?.last_name}, {candidate?.first_name}</span
+				></Sheet.Title
 			>
 			<Sheet.Description>
 				{#if candidate?.complete && candidate.average != null}
@@ -115,7 +118,7 @@
 <ConfirmDialog
 	bind:open={() => clearing !== null, (v) => !v && (clearing = null)}
 	title={`Clear ${clearing?.judge_name}'s scores?`}
-	description={`This deletes their scores for ${candidate?.first_name} ${candidate?.last_name}. In a 1-on-1 interview, other judges can then score this candidate. It cannot be undone.`}
+	description={`This deletes their scores for candidate ${candidate?.number} (${candidate?.first_name} ${candidate?.last_name}). In a 1-on-1 interview, other judges can then score this candidate. It cannot be undone.`}
 	confirmLabel="Clear scores"
 	onconfirm={() => {
 		if (clearing) {

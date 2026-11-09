@@ -37,7 +37,7 @@
 
 	let search = $state("");
 	const rows = $derived(
-		candidates.filter((c) => matchScore(search, `${c.first_name} ${c.last_name}`) > 0)
+		candidates.filter((c) => matchScore(search, `${c.number} ${c.first_name} ${c.last_name}`) > 0)
 	);
 
 	let detailId = $state<string | null>(null);
@@ -101,7 +101,7 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
-					<Table.Head rowspan={2}>#</Table.Head>
+					<Table.Head rowspan={2}>No.</Table.Head>
 					<Table.Head rowspan={2}>Candidate</Table.Head>
 					{#each selected as i (i.id)}
 						<Table.Head
@@ -130,13 +130,13 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{#each rows as c, n (c.id)}
+				{#each rows as c (c.id)}
 					<Table.Row class="cursor-pointer" onclick={() => (detailId = c.id)}>
-						<Table.Cell class="text-muted-foreground">{n + 1}</Table.Cell>
+						<Table.Cell class="text-lg font-bold tabular-nums">{c.number}</Table.Cell>
 						<Table.Cell>
 							<button
 								type="button"
-								class="text-left font-semibold hover:underline"
+								class="text-left text-muted-foreground hover:underline"
 								onclick={(e) => {
 									e.stopPropagation();
 									detailId = c.id;

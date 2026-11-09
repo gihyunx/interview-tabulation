@@ -21,6 +21,7 @@ func (status) Schema(r huma.Registry) *huma.Schema {
 
 type boardCandidate struct {
 	ID        string `json:"id"`
+	Number    int    `json:"number"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Status    status `json:"status"`

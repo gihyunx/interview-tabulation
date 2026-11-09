@@ -54,6 +54,7 @@ type Submission struct {
 
 type ResultCandidate struct {
 	ID          string       `json:"id"`
+	Number      int          `json:"number"`
 	FirstName   string       `json:"first_name"`
 	LastName    string       `json:"last_name"`
 	Submissions []Submission `json:"submissions"`
@@ -180,7 +181,7 @@ func LoadResults(ctx context.Context, q db.Querier, selected []string) (Results,
 	}
 
 	// Candidates.
-	rows, err = q.Query(ctx, `SELECT candidate_id, first_name, last_name FROM candidate ORDER BY last_name, first_name, candidate_id`)
+	rows, err = q.Query(ctx, `SELECT candidate_id, number, first_name, last_name FROM candidate ORDER BY number`)
 	if err != nil {
 		return res, err
 	}
@@ -188,7 +189,7 @@ func LoadResults(ctx context.Context, q db.Querier, selected []string) (Results,
 	cands := map[string]int{}
 	for rows.Next() {
 		c := ResultCandidate{Submissions: []Submission{}}
-		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName); err != nil {
+		if err := rows.Scan(&c.ID, &c.Number, &c.FirstName, &c.LastName); err != nil {
 			return res, err
 		}
 		cands[c.ID] = len(res.Candidates)

@@ -240,7 +240,8 @@ func TestDelete(t *testing.T) {
 		judgeID := seedAssignment(t, u.ID)
 
 		var candidateID, criterionID string
-		require.NoError(t, testPool.QueryRow(ctx, `INSERT INTO candidate (first_name, last_name) VALUES ('C', 'D') RETURNING candidate_id`).Scan(&candidateID))
+		require.NoError(t, testPool.QueryRow(ctx, `INSERT INTO candidate (number, first_name, last_name)
+			VALUES ((SELECT COALESCE(MAX(number), 0) + 1 FROM candidate), 'C', 'D') RETURNING candidate_id`).Scan(&candidateID))
 		require.NoError(t, testPool.QueryRow(ctx, `
 			INSERT INTO criterion (rubric_id, title, description, max_points, position)
 			SELECT rubric_id, 'T', '', 10, 0 FROM interview JOIN judge USING (interview_id) WHERE judge_id = $1

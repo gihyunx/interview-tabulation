@@ -20,17 +20,21 @@
 
 	let search = $state("");
 	const shown = $derived(
-		(candidates.data ?? []).filter((c) => matchScore(search, `${c.first_name} ${c.last_name}`) > 0)
+		(candidates.data ?? []).filter(
+			(c) => matchScore(search, `${c.number} ${c.first_name} ${c.last_name}`) > 0
+		)
 	);
 
 	// null = closed; {} = create; { candidate } = edit.
 	let editing = $state<{ candidate?: Candidate } | null>(null);
+	let number = $state<number | null>(null);
 	let firstName = $state("");
 	let lastName = $state("");
 	let deleting = $state<Candidate | null>(null);
 	let importing = $state(false);
 
 	function openForm(candidate?: Candidate) {
+		number = candidate?.number ?? null;
 		firstName = candidate?.first_name ?? "";
 		lastName = candidate?.last_name ?? "";
 		save.reset();
@@ -39,7 +43,7 @@
 
 	const save = createMutation(() => ({
 		mutationFn: async () => {
-			const body = { first_name: firstName, last_name: lastName };
+			const body = { number: number ?? undefined, first_name: firstName, last_name: lastName };
 			const c = editing?.candidate;
 			const { error } = c
 				? await api.PATCH("/v1/candidates/{id}", { params: { path: { id: c.id } }, body })
@@ -78,7 +82,7 @@
 
 <Input
 	class="mb-4 w-80"
-	placeholder="Search candidates"
+	placeholder="Search by number or name"
 	aria-label="Search candidates"
 	bind:value={search}
 />
@@ -94,6 +98,7 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
+					<Table.Head class="w-24">No.</Table.Head>
 					<Table.Head>Name</Table.Head>
 					<Table.Head class="text-right">Actions</Table.Head>
 				</Table.Row>
@@ -101,7 +106,8 @@
 			<Table.Body>
 				{#each shown as c (c.id)}
 					<Table.Row>
-						<Table.Cell class="font-semibold">{c.last_name}, {c.first_name}</Table.Cell>
+						<Table.Cell class="text-lg font-bold tabular-nums">{c.number}</Table.Cell>
+						<Table.Cell class="text-muted-foreground">{c.last_name}, {c.first_name}</Table.Cell>
 						<Table.Cell class="space-x-2 text-right">
 							<Button variant="outline" size="sm" onclick={() => openForm(c)}>Edit</Button>
 							<Button variant="outline" size="sm" onclick={() => (deleting = c)}>Delete</Button>
@@ -109,7 +115,7 @@
 					</Table.Row>
 				{:else}
 					<Table.Row>
-						<Table.Cell colspan={2} class="text-center text-muted-foreground">
+						<Table.Cell colspan={3} class="text-center text-muted-foreground">
 							{candidates.data.length === 0
 								? "No candidates yet. Add one or import a CSV."
 								: "No candidates match your search."}
@@ -132,8 +138,19 @@
 		>
 			<Dialog.Header>
 				<Dialog.Title>{editing?.candidate ? "Edit candidate" : "New candidate"}</Dialog.Title>
-				<Dialog.Description>The name judges will see.</Dialog.Description>
+				<Dialog.Description>The number and name judges will see.</Dialog.Description>
 			</Dialog.Header>
+			<div class="space-y-2">
+				<Label for="c-number">Candidate number</Label>
+				<Input
+					id="c-number"
+					type="number"
+					min={1}
+					required={!!editing?.candidate}
+					placeholder="Next available"
+					bind:value={number}
+				/>
+			</div>
 			<div class="grid grid-cols-2 gap-4">
 				<div class="space-y-2">
 					<Label for="c-first">First name</Label>
@@ -157,7 +174,7 @@
 
 <ConfirmDialog
 	bind:open={() => deleting !== null, (v) => !v && (deleting = null)}
-	title={`Delete ${deleting?.first_name} ${deleting?.last_name}?`}
+	title={`Delete candidate ${deleting?.number} (${deleting?.first_name} ${deleting?.last_name})?`}
 	description="Candidates who already have scores cannot be deleted."
 	confirmLabel="Delete"
 	onconfirm={() => {

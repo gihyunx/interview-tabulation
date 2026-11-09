@@ -30,10 +30,10 @@
 
 	const matches = $derived(
 		candidates
-			.map((c) => ({ c, score: matchScore(search, `${c.first_name} ${c.last_name}`) }))
+			.map((c) => ({ c, score: matchScore(search, `${c.number} ${c.first_name} ${c.last_name}`) }))
 			.filter((m) => m.score > 0)
 	);
-	// A-Z by last name is the server's order. The list shows matches only.
+	// Candidate number is the server's order. The list shows matches only.
 	const shown = $derived(matches.map((m) => m.c));
 	const selectedIndex = $derived(shown.findIndex((c) => c.id === selectedId));
 
@@ -124,7 +124,7 @@
 <div class="flex h-full flex-col gap-3">
 	<Input
 		type="search"
-		placeholder="Search candidates"
+		placeholder="Search by number or name"
 		aria-label="Search candidates"
 		class="h-11"
 		bind:value={search}
@@ -136,7 +136,7 @@
 				? `${candidates.length} candidates`
 				: `${shown.length} of ${candidates.length} match`}
 		</span>
-		<span>A - Z</span>
+		<span>By number</span>
 	</div>
 	{#if locked > 0}
 		<p
@@ -145,7 +145,7 @@
 			<LockIcon class="mt-0.5 size-4 shrink-0" />
 			<span>
 				{locked === 1 ? "1 candidate is" : `${locked} candidates are`} locked: another judge already scored
-				them, and in a 1-on-1 interview each candidate has one interviewer.
+				them, and in a 1-on-1 interview, each candidate has one interviewer.
 			</span>
 		</p>
 	{/if}
@@ -185,8 +185,9 @@
 					"disabled:cursor-not-allowed disabled:border-dashed disabled:bg-muted disabled:shadow-none disabled:hover:border-border"
 				]}
 			>
-				<span class="min-w-0">
-					<span class="block truncate text-lg font-bold">{c.last_name}, {c.first_name}</span>
+				<span class="text-2xl font-bold tabular-nums">{c.number}</span>
+				<span class="min-w-0 flex-1">
+					<span class="block truncate text-sm font-medium">{c.last_name}, {c.first_name}</span>
 					<span
 						class={[
 							"block text-sm",

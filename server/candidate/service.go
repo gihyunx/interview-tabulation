@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/gihyunx/interview-tabulation/internal/apierr"
+	"github.com/gihyunx/interview-tabulation/internal/db"
 	"github.com/gihyunx/interview-tabulation/internal/event"
 	"github.com/gihyunx/interview-tabulation/internal/pgerr"
 	"github.com/jackc/pgx/v5"
@@ -17,8 +19,9 @@ import (
 )
 
 var (
-	errNotFound  = errors.New("candidate not found")
-	errHasScores = errors.New("candidate has scores")
+	errNotFound    = errors.New("candidate not found")
+	errHasScores   = errors.New("candidate has scores")
+	errNumberTaken = errors.New("candidate number taken")
 )
 
 type service struct {
@@ -34,6 +37,9 @@ func (s *service) create(ctx context.Context, actorID string, in nameInput) (can
 		return candidate{}, apierr.Invalid("name is empty")
 	}
 	c, err := insert(ctx, s.pool, in)
+	if pgerr.IsUniqueViolation(err) {
+		return candidate{}, errNumberTaken
+	}
 	if err != nil {
 		return candidate{}, err
 	}
@@ -46,6 +52,9 @@ func (s *service) update(ctx context.Context, actorID, id string, in candidateUp
 	c, err := update(ctx, s.pool, id, in)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return candidate{}, errNotFound
+	}
+	if pgerr.IsUniqueViolation(err) {
+		return candidate{}, errNumberTaken
 	}
 	if err != nil {
 		return candidate{}, err
@@ -71,8 +80,8 @@ func (s *service) delete(ctx context.Context, actorID, id string) error {
 	return nil
 }
 
-// parseCSV reads a `first_name,last_name` file. Row errors are returned per
-// row; a bad header is a 422.
+// parseCSV reads a `first_name,last_name` or `number,first_name,last_name`
+// file. Row errors are returned per row; a bad header is a 422.
 func parseCSV(r io.Reader) ([]importRow, error) {
 	cr := csv.NewReader(r)
 	cr.FieldsPerRecord = -1
@@ -82,13 +91,17 @@ func parseCSV(r io.Reader) ([]importRow, error) {
 	if err != nil {
 		return nil, apierr.Invalid("file is empty or unreadable")
 	}
-	if len(head) != 2 ||
-		strings.ToLower(strings.TrimSpace(strings.TrimPrefix(head[0], "\xef\xbb\xbf"))) != "first_name" ||
-		strings.ToLower(strings.TrimSpace(head[1])) != "last_name" {
-		return nil, apierr.Invalid("the header must be exactly first_name,last_name")
+	for i := range head {
+		head[i] = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(head[i], "\xef\xbb\xbf")))
 	}
+	header := strings.Join(head, ",")
+	if header != "first_name,last_name" && header != "number,first_name,last_name" {
+		return nil, apierr.Invalid("the header must be exactly first_name,last_name or number,first_name,last_name")
+	}
+	numbered := len(head) == 3
 
 	var rows []importRow
+	seen := map[int]bool{}
 	for {
 		rec, err := cr.Read()
 		if errors.Is(err, io.EOF) {
@@ -101,13 +114,17 @@ func parseCSV(r io.Reader) ([]importRow, error) {
 			row.Line, row.Error = pe.Line, "could not read this line"
 		case err != nil:
 			return nil, err
-		case len(rec) != 2:
+		case len(rec) != len(head):
 			row.Line, _ = cr.FieldPos(0)
-			row.Error = "expected 2 columns"
+			row.Error = fmt.Sprintf("expected %d columns", len(head))
 		default:
 			row.Line, _ = cr.FieldPos(0)
+			if numbered {
+				row.Number, row.Error = parseNumber(rec[0], seen)
+				rec = rec[1:]
+			}
 			row.FirstName, row.LastName = strings.TrimSpace(rec[0]), strings.TrimSpace(rec[1])
-			if row.FirstName == "" || row.LastName == "" {
+			if row.Error == "" && (row.FirstName == "" || row.LastName == "") {
 				row.Error = "first and last name are required"
 			}
 		}
@@ -119,11 +136,48 @@ func parseCSV(r io.Reader) ([]importRow, error) {
 	return rows, nil
 }
 
+// parseNumber reads a candidate number and records it in seen.
+func parseNumber(field string, seen map[int]bool) (int, string) {
+	n, err := strconv.Atoi(strings.TrimSpace(field))
+	switch {
+	case err != nil || n < 1:
+		return n, "number must be a whole number of 1 or more"
+	case seen[n]:
+		return n, "number appears twice in the file"
+	}
+	seen[n] = true
+	return n, ""
+}
+
+// markTaken flags rows whose number already belongs to a candidate.
+func markTaken(ctx context.Context, q db.Querier, rows []importRow) error {
+	var nums []int
+	for _, r := range rows {
+		if r.Number > 0 {
+			nums = append(nums, r.Number)
+		}
+	}
+	if len(nums) == 0 {
+		return nil
+	}
+	taken, err := takenNumbers(ctx, q, nums)
+	for i := range rows {
+		if rows[i].Error == "" && taken[rows[i].Number] {
+			rows[i].Error = "another candidate already has this number"
+		}
+	}
+	return err
+}
+
 // importCSV returns the parsed rows. Unless dryRun, it saves them all in one
-// transaction, or none if any row has an error.
+// transaction, or none if any row has an error. Without a number column,
+// numbers continue from the highest existing one, in file order.
 func (s *service) importCSV(ctx context.Context, actorID string, r io.Reader, dryRun bool) ([]importRow, error) {
 	rows, err := parseCSV(r)
 	if err != nil {
+		return nil, err
+	}
+	if err := markTaken(ctx, s.pool, rows); err != nil {
 		return nil, err
 	}
 	if dryRun {
@@ -134,7 +188,11 @@ func (s *service) importCSV(ctx context.Context, actorID string, r io.Reader, dr
 			return rows, apierr.Invalid(fmt.Sprintf("line %d: %s", row.Line, row.Error))
 		}
 	}
-	if err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error { return insertMany(ctx, tx, rows) }); err != nil {
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error { return insertMany(ctx, tx, rows) })
+	if pgerr.IsUniqueViolation(err) {
+		return nil, errNumberTaken
+	}
+	if err != nil {
 		return nil, err
 	}
 	slog.Info("candidates imported", "actor_id", actorID, "count", len(rows))

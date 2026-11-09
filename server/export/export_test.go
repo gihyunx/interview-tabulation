@@ -73,18 +73,18 @@ func TestWorkbook(t *testing.T) {
 		rows, err := f.GetRows("Summary")
 		require.NoError(t, err)
 		head := rows[0]
-		assert.Equal(t, "Candidate", head[0])
-		assert.Contains(t, head[1], "Interviewer")
+		assert.Equal(t, []string{"No.", "Candidate"}, head[:2])
+		assert.Contains(t, head[2], "Interviewer")
 		assert.Equal(t, []string{"Sum", "Average (/100)", "Status"}, head[len(head)-3:])
 
 		var aRow, bRow []string
 		names := 0
 		for _, r := range rows[1:] {
 			names++
-			if r[0] == lastName(t, a)+", Can" {
+			if r[1] == lastName(t, a)+", Can" {
 				aRow = r
 			}
-			if r[0] == lastName(t, b)+", Can" {
+			if r[1] == lastName(t, b)+", Can" {
 				bRow = r
 			}
 		}
@@ -106,17 +106,16 @@ func TestWorkbook(t *testing.T) {
 
 	t.Run("detail sheet", func(t *testing.T) {
 		rows := mustRows(t, f, titles[1])
-		assert.Equal(t, "Candidate", rows[0][0])
-		assert.Equal(t, "Judge", rows[0][1])
-		assert.Regexp(t, `\(/60\)$`, rows[0][2])
-		assert.Equal(t, []string{"Total", "Submitted at", "Last edited at"}, rows[0][4:7])
+		assert.Equal(t, []string{"No.", "Candidate", "Judge"}, rows[0][:3])
+		assert.Regexp(t, `\(/60\)$`, rows[0][3])
+		assert.Equal(t, []string{"Total", "Submitted at", "Last edited at"}, rows[0][5:8])
 		var unscoredRow []string
 		for _, r := range rows[1:] {
-			if r[0] == lastName(t, unscored)+", Can" {
+			if r[1] == lastName(t, unscored)+", Can" {
 				unscoredRow = r
 			}
 		}
-		assert.Equal(t, []string{lastName(t, unscored) + ", Can"}, unscoredRow, "blank row for an unscored candidate")
+		require.Len(t, unscoredRow, 2, "blank row for an unscored candidate")
 		assert.Len(t, rows[1:], 4, "a x 2 judges, b x 1 judge, unscored")
 	})
 }

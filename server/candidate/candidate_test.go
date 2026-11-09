@@ -105,6 +105,28 @@ func TestImport(t *testing.T) {
 		require.NoError(t, fx.Pool.QueryRow(context.Background(), `SELECT first_name FROM candidate WHERE last_name = 'Rizal'`).Scan(&first))
 		assert.Equal(t, "José", first, "trimmed, accents kept")
 	})
+
+	t.Run("number column", func(t *testing.T) {
+		before := count(t)
+		resp := upload(t, "number,first_name,last_name\n5001,Ana,Num\nx,B,C\n5001,D,E\n0,F,G\n", "?dry_run=true")
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		got := apitest.Decode[importBody](t, resp)
+		assert.Equal(t, 3, got.Errors, "bad number, duplicate in file, zero")
+		assert.Equal(t, 5001, got.Rows[0].Number)
+
+		resp = upload(t, "number,first_name,last_name\n5002,Ana,Num\n5001,Ben,Num\n", "")
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, before+2, count(t))
+		var n int
+		require.NoError(t, fx.Pool.QueryRow(context.Background(), `SELECT number FROM candidate WHERE first_name = 'Ben' AND last_name = 'Num'`).Scan(&n))
+		assert.Equal(t, 5001, n)
+
+		resp = upload(t, "number,first_name,last_name\n5001,Taken,Num\n", "?dry_run=true")
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 1, apitest.Decode[importBody](t, resp).Errors, "number already in the database")
+		assert.Equal(t, http.StatusUnprocessableEntity, upload(t, "number,first_name,last_name\n5001,Taken,Num\n", "").StatusCode)
+		assert.Equal(t, before+2, count(t))
+	})
 }
 
 func TestCRUDAndDeleteGuard(t *testing.T) {
@@ -116,6 +138,20 @@ func TestCRUDAndDeleteGuard(t *testing.T) {
 	resp = apitest.Do(t, srv, "PATCH", "/v1/candidates/"+c.ID, tok, map[string]any{"last_name": "Santos"})
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "Santos", apitest.Decode[candidate](t, resp).LastName)
+
+	t.Run("numbers", func(t *testing.T) {
+		resp := apitest.Do(t, srv, "POST", "/v1/candidates", tok, map[string]any{"first_name": "Next", "last_name": "One"})
+		require.Equal(t, http.StatusCreated, resp.StatusCode)
+		next := apitest.Decode[candidate](t, resp)
+		assert.Equal(t, c.Number+1, next.Number, "defaults to highest + 1")
+
+		assert.Equal(t, http.StatusConflict, apitest.Do(t, srv, "PATCH", "/v1/candidates/"+next.ID, tok, map[string]any{"number": c.Number}).StatusCode)
+		assert.Equal(t, http.StatusConflict, apitest.Do(t, srv, "POST", "/v1/candidates", tok, map[string]any{"number": c.Number, "first_name": "A", "last_name": "B"}).StatusCode)
+		resp = apitest.Do(t, srv, "PATCH", "/v1/candidates/"+next.ID, tok, map[string]any{"number": 9000})
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, 9000, apitest.Decode[candidate](t, resp).Number)
+		assert.Equal(t, http.StatusUnprocessableEntity, apitest.Do(t, srv, "PATCH", "/v1/candidates/"+next.ID, tok, map[string]any{"number": 0}).StatusCode)
+	})
 
 	assert.Equal(t, http.StatusUnprocessableEntity, apitest.Do(t, srv, "POST", "/v1/candidates", tok, map[string]any{"first_name": "", "last_name": "X"}).StatusCode)
 	assert.Equal(t, http.StatusNotFound, apitest.Do(t, srv, "PATCH", "/v1/candidates/"+uuid.NewString(), tok, map[string]any{"last_name": "X"}).StatusCode)

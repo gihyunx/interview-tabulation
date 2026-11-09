@@ -89,7 +89,7 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 	const sheet = "Summary"
 	_ = f.SetSheetName("Sheet1", sheet)
 
-	head := []any{"Candidate"}
+	head := []any{"No.", "Candidate"}
 	for _, in := range selected {
 		if in.Mode == "one_on_one" {
 			head = append(head, in.Title+" - Interviewer", in.Title+" - Total")
@@ -103,7 +103,7 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 	row(f, sheet, 1, head)
 
 	for n, c := range res.Candidates {
-		cells := []any{c.LastName + ", " + c.FirstName}
+		cells := []any{c.Number, c.LastName + ", " + c.FirstName}
 		for _, in := range selected {
 			if in.Mode == "one_on_one" {
 				if s := submission(c, in.ID, ""); s != nil {
@@ -131,7 +131,7 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 }
 
 func detail(f *excelize.File, bold int, sheet string, res score.Results, in score.ResultInterview, loc *time.Location) {
-	head := []any{"Candidate", "Judge"}
+	head := []any{"No.", "Candidate", "Judge"}
 	for _, c := range in.Criteria {
 		head = append(head, fmt.Sprintf("%s (/%d)", c.Title, c.MaxPoints))
 	}
@@ -151,7 +151,7 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 			for _, v := range s.Values {
 				values[v.CriterionID] = v.Value
 			}
-			cells := []any{name, s.JudgeName}
+			cells := []any{c.Number, name, s.JudgeName}
 			for _, cr := range in.Criteria {
 				cells = append(cells, values[cr.ID])
 			}
@@ -159,7 +159,7 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 			r++
 		}
 		if subs == 0 { // keep the candidate list complete
-			row(f, sheet, r, []any{name})
+			row(f, sheet, r, []any{c.Number, name})
 			r++
 		}
 	}

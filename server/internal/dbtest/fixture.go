@@ -48,7 +48,8 @@ func (f Fixtures) Judge(t *testing.T, userID, interviewID string) string {
 }
 
 func (f Fixtures) Candidate(t *testing.T) string {
-	return f.one(t, `INSERT INTO candidate (first_name, last_name) VALUES ('Can', $1) RETURNING candidate_id`, "D-"+uuid.NewString()[:4])
+	return f.one(t, `INSERT INTO candidate (number, first_name, last_name)
+		VALUES ((SELECT COALESCE(MAX(number), 0) + 1 FROM candidate), 'Can', $1) RETURNING candidate_id`, "D-"+uuid.NewString()[:4])
 }
 
 func (f Fixtures) Score(t *testing.T, judgeID, candidateID, criterionID string, value int) {

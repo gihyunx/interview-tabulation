@@ -50,8 +50,9 @@
 <Dialog.Header>
 	<Dialog.Title>Import candidates</Dialog.Title>
 	<Dialog.Description>
-		Upload a CSV with the header <code>first_name,last_name</code>. You can review it before
-		anything is saved.
+		Upload a CSV with the header <code>number,first_name,last_name</code>, or
+		<code>first_name,last_name</code> to number candidates in file order after the highest existing number.
+		You can review it before anything is saved.
 	</Dialog.Description>
 </Dialog.Header>
 
@@ -92,6 +93,7 @@
 			<Table.Header>
 				<Table.Row>
 					<Table.Head>Line</Table.Head>
+					<Table.Head>No.</Table.Head>
 					<Table.Head>First name</Table.Head>
 					<Table.Head>Last name</Table.Head>
 					<Table.Head>Problem</Table.Head>
@@ -101,6 +103,7 @@
 				{#each rows as row (row.line)}
 					<Table.Row>
 						<Table.Cell>{row.line}</Table.Cell>
+						<Table.Cell>{row.number ?? (row.error ? "" : "Auto")}</Table.Cell>
 						<Table.Cell>{row.first_name}</Table.Cell>
 						<Table.Cell>{row.last_name}</Table.Cell>
 						<Table.Cell class="text-destructive">{row.error ?? ""}</Table.Cell>

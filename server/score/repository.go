@@ -83,7 +83,7 @@ func upsertScores(ctx context.Context, q db.Querier, judgeID, candidateID string
 // loadBoard returns candidates from the judge's point of view. candidateID narrows it to one.
 func loadBoard(ctx context.Context, q db.Querier, interviewID, judgeID string, oneOnOne bool, candidateID *string) ([]boardCandidate, error) {
 	rows, err := q.Query(ctx, `
-		SELECT c.candidate_id, c.first_name, c.last_name,
+		SELECT c.candidate_id, c.number, c.first_name, c.last_name,
 			COALESCE((SELECT jsonb_agg(jsonb_build_object('criterion_id', s.criterion_id, 'value', s.value))
 				FROM score s WHERE s.judge_id = @judge_id AND s.candidate_id = c.candidate_id), '[]') AS my_scores,
 			(SELECT u.first_name || ' ' || u.last_name
@@ -92,7 +92,7 @@ func loadBoard(ctx context.Context, q db.Querier, interviewID, judgeID string, o
 				LIMIT 1) AS other_judge
 		FROM candidate c
 		WHERE @candidate_id::uuid IS NULL OR c.candidate_id = @candidate_id::uuid
-		ORDER BY c.last_name, c.first_name, c.candidate_id`,
+		ORDER BY c.number`,
 		pgx.NamedArgs{"interview_id": interviewID, "judge_id": judgeID, "candidate_id": candidateID})
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func loadBoard(ctx context.Context, q db.Querier, interviewID, judgeID string, o
 		var c boardCandidate
 		var mine []byte
 		var other *string
-		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName, &mine, &other); err != nil {
+		if err := rows.Scan(&c.ID, &c.Number, &c.FirstName, &c.LastName, &mine, &other); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(mine, &c.MyScores); err != nil {

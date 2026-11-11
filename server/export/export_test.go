@@ -77,29 +77,45 @@ func TestWorkbook(t *testing.T) {
 		assert.Contains(t, head[2], "Interviewer")
 		assert.Equal(t, []string{"Sum", "Average (/100)", "Status"}, head[len(head)-3:])
 
-		var aRow, bRow []string
-		names := 0
-		for _, r := range rows[1:] {
-			names++
+		aRow, bRow := 0, 0
+		for i, r := range rows[1:] {
 			if r[1] == lastName(t, a)+", Can" {
-				aRow = r
+				aRow = i + 2
 			}
 			if r[1] == lastName(t, b)+", Can" {
-				bRow = r
+				bRow = i + 2
 			}
 		}
-		assert.Equal(t, 3, names, "every candidate, scored or not")
-		require.NotNil(t, aRow)
-		assert.Equal(t, "280", aRow[len(aRow)-3], "sum 80+100+100")
-		assert.Equal(t, "93.33", aRow[len(aRow)-2][:5], "average")
-		assert.Equal(t, "Complete", aRow[len(aRow)-1])
-		assert.Equal(t, "Pending", bRow[len(bRow)-1])
+		assert.Len(t, rows[1:], 3, "every candidate, scored or not")
+		require.NotZero(t, aRow)
+		calc := func(col, row int) string {
+			ref, _ := excelize.CoordinatesToCellName(col, row)
+			formula, err := f.GetCellFormula("Summary", ref)
+			require.NoError(t, err)
+			require.NotEmpty(t, formula, "%s is a formula", ref)
+			v, err := f.CalcCellValue("Summary", ref)
+			require.NoError(t, err)
+			return v
+		}
+		n := len(head)
+		assert.Equal(t, "280", calc(n-2, aRow), "sum 80+100+100")
+		assert.Equal(t, "93.33", calc(n-1, aRow)[:5], "average")
+		assert.Equal(t, "Complete", calc(n, aRow))
+		assert.Equal(t, "", calc(n-1, bRow), "no average until complete")
+		assert.Equal(t, "Pending", calc(n, bRow))
+	})
+
+	t.Run("columns fit their text", func(t *testing.T) {
+		no, err := f.GetColWidth("Summary", "A")
+		require.NoError(t, err)
+		name, err := f.GetColWidth("Summary", "B")
+		require.NoError(t, err)
+		assert.Less(t, no, name)
+		assert.GreaterOrEqual(t, name, float64(len(lastName(t, a)+", Can")))
 	})
 
 	t.Run("numbers are numbers", func(t *testing.T) {
-		last := len(mustRows(t, f, "Summary")[0])
-		sumRef, _ := excelize.CoordinatesToCellName(last-2, 2)
-		typ, err := f.GetCellType("Summary", sumRef)
+		typ, err := f.GetCellType("Summary", "A2") // the candidate number
 		require.NoError(t, err)
 		assert.NotContains(t, []excelize.CellType{excelize.CellTypeSharedString, excelize.CellTypeInlineString}, typ, "stored as a number, not text")
 	})
@@ -116,6 +132,9 @@ func TestWorkbook(t *testing.T) {
 			}
 		}
 		require.Len(t, unscoredRow, 2, "blank row for an unscored candidate")
+		total, err := f.CalcCellValue(titles[1], "F2")
+		require.NoError(t, err)
+		assert.Equal(t, "100", total, "total is a SUM of the criteria")
 		assert.Len(t, rows[1:], 4, "a x 2 judges, b x 1 judge, unscored")
 	})
 }

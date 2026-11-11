@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	_ "time/tzdata" // the report is in Asia/Manila even where the OS has no zoneinfo
+	"unicode/utf8"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/gihyunx/interview-tabulation/config"
@@ -64,6 +65,8 @@ func Setup(api huma.API, pool *pgxpool.Pool, cfg config.Config) {
 
 func build(res score.Results, loc *time.Location) *excelize.File {
 	f := excelize.NewFile()
+	// Formulas are saved without results; make Excel and LibreOffice compute them on open.
+	_ = f.SetCalcProps(&excelize.CalcPropsOptions{FullCalcOnLoad: new(true)})
 	bold, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}})
 
 	var selected []score.ResultInterview
@@ -121,11 +124,25 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 				}
 			}
 		}
-		avg, status := any(nil), "Pending"
-		if c.Complete {
-			avg, status = *c.Average, "Complete"
+		r := n + 2
+		row(f, sheet, r, cells)
+		// Sum, average and status are formulas over the score columns, so they can be checked.
+		// SUM and COUNT skip the interviewer names, leaving only the res.Expected totals.
+		scores := ""
+		if len(cells) > 2 {
+			from, _ := excelize.CoordinatesToCellName(3, r)
+			to, _ := excelize.CoordinatesToCellName(len(cells), r)
+			scores = from + ":" + to
 		}
-		row(f, sheet, n+2, append(cells, c.Sum, avg, status))
+		sumRef, _ := excelize.CoordinatesToCellName(len(cells)+1, r)
+		if scores == "" || res.Expected == 0 {
+			row(f, sheet, r, append(cells, 0, nil, "Pending"))
+			continue
+		}
+		done := fmt.Sprintf("COUNT(%s)=%d", scores, res.Expected)
+		formula(f, sheet, len(cells)+1, r, fmt.Sprintf("SUM(%s)", scores))
+		formula(f, sheet, len(cells)+2, r, fmt.Sprintf(`IF(%s,%s/%d,"")`, done, sumRef, res.Expected))
+		formula(f, sheet, len(cells)+3, r, fmt.Sprintf(`IF(%s,"Complete","Pending")`, done))
 	}
 	finish(f, sheet, bold, len(head))
 }
@@ -155,7 +172,13 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 			for _, cr := range in.Criteria {
 				cells = append(cells, values[cr.ID])
 			}
-			row(f, sheet, r, append(cells, s.Total, s.SubmittedAt.In(loc).Format(timeLayout), s.EditedAt.In(loc).Format(timeLayout)))
+			total := len(cells) + 1
+			row(f, sheet, r, append(cells, nil, s.SubmittedAt.In(loc).Format(timeLayout), s.EditedAt.In(loc).Format(timeLayout)))
+			if len(in.Criteria) > 0 {
+				from, _ := excelize.CoordinatesToCellName(4, r)
+				to, _ := excelize.CoordinatesToCellName(total-1, r)
+				formula(f, sheet, total, r, fmt.Sprintf("SUM(%s:%s)", from, to))
+			}
 			r++
 		}
 		if subs == 0 { // keep the candidate list complete
@@ -181,18 +204,28 @@ func row(f *excelize.File, sheet string, n int, cells []any) {
 	_ = f.SetSheetRow(sheet, ref, &cells)
 }
 
-// finish makes the header bold and frozen and sizes the columns.
+func formula(f *excelize.File, sheet string, col, n int, expr string) {
+	ref, _ := excelize.CoordinatesToCellName(col, n)
+	_ = f.SetCellFormula(sheet, ref, expr)
+}
+
+// finish makes the header bold and frozen and fits each column to its longest text, like
+// double-clicking the column edge. Formula cells read as empty here; their numbers are short.
 func finish(f *excelize.File, sheet string, bold, cols int) {
 	last, _ := excelize.CoordinatesToCellName(cols, 1)
 	_ = f.SetCellStyle(sheet, "A1", last, bold)
 	_ = f.SetPanes(sheet, &excelize.Panes{Freeze: true, YSplit: 1, TopLeftCell: "A2", ActivePane: "bottomLeft"})
-	for c := 1; c <= cols; c++ {
-		name, _ := excelize.ColumnNumberToName(c)
-		w := 16.0
-		if c == 1 {
-			w = 28
+	widths := make([]int, cols)
+	rows, _ := f.GetRows(sheet)
+	for _, r := range rows {
+		for c, v := range r[:min(len(r), cols)] {
+			widths[c] = max(widths[c], utf8.RuneCountInString(v))
 		}
-		_ = f.SetColWidth(sheet, name, name, w)
+	}
+	for c, w := range widths {
+		name, _ := excelize.ColumnNumberToName(c + 1)
+		// ponytail: character count, not measured glyphs; +2 covers bold headers and padding.
+		_ = f.SetColWidth(sheet, name, name, float64(max(w, 6)+2))
 	}
 }
 

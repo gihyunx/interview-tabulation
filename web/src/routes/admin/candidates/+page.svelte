@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { api, errorMessage } from "#lib/api/client.ts";
 	import ConfirmDialog from "#lib/components/confirm-dialog.svelte";
+	import { latest } from "#lib/latest.svelte.ts";
 	import StateMessage from "#lib/components/state-message.svelte";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import * as Dialog from "#lib/components/ui/dialog/index.js";
@@ -27,10 +28,12 @@
 
 	// null = closed; {} = create; { candidate } = edit.
 	let editing = $state<{ candidate?: Candidate } | null>(null);
+	const shownEditing = latest(() => editing);
 	let number = $state<number | null>(null);
 	let firstName = $state("");
 	let lastName = $state("");
 	let deleting = $state<Candidate | null>(null);
+	const shownDeleting = latest(() => deleting);
 	let importing = $state(false);
 
 	function openForm(candidate?: Candidate) {
@@ -137,7 +140,9 @@
 			}}
 		>
 			<Dialog.Header>
-				<Dialog.Title>{editing?.candidate ? "Edit candidate" : "New candidate"}</Dialog.Title>
+				<Dialog.Title
+					>{shownEditing.current?.candidate ? "Edit candidate" : "New candidate"}</Dialog.Title
+				>
 				<Dialog.Description>The number and name judges will see.</Dialog.Description>
 			</Dialog.Header>
 			<div class="space-y-2">
@@ -174,7 +179,7 @@
 
 <ConfirmDialog
 	bind:open={() => deleting !== null, (v) => !v && (deleting = null)}
-	title={`Delete candidate ${deleting?.number} (${deleting?.first_name} ${deleting?.last_name})?`}
+	title={`Delete candidate ${shownDeleting.current?.number} (${shownDeleting.current?.first_name} ${shownDeleting.current?.last_name})?`}
 	description="Candidates who already have scores cannot be deleted."
 	confirmLabel="Delete"
 	onconfirm={() => {

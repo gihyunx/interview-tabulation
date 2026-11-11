@@ -2,6 +2,7 @@
 	import { api, errorMessage } from "#lib/api/client.ts";
 	import type { components } from "#lib/api/schema.d.ts";
 	import ConfirmDialog from "#lib/components/confirm-dialog.svelte";
+	import { latest } from "#lib/latest.svelte.ts";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import * as Sheet from "#lib/components/ui/sheet/index.js";
 	import * as Table from "#lib/components/ui/table/index.js";
@@ -17,6 +18,8 @@
 
 	const queryClient = useQueryClient();
 	let clearing = $state<Submission | null>(null);
+	const shownClearing = latest(() => clearing);
+	const shown = latest(() => candidate);
 
 	const clear = createMutation(() => ({
 		mutationFn: async (s: Submission) => {
@@ -36,7 +39,7 @@
 	}));
 
 	const subsOf = (interviewId: string) =>
-		(candidate?.submissions ?? []).filter((s) => s.interview_id === interviewId);
+		(shown.current?.submissions ?? []).filter((s) => s.interview_id === interviewId);
 	const valueOf = (s: Submission, criterionId: string) =>
 		(s.values ?? []).find((v) => v.criterion_id === criterionId)?.value;
 </script>
@@ -48,14 +51,14 @@
 	>
 		<Sheet.Header>
 			<Sheet.Title class="text-2xl font-bold tracking-tight"
-				>Candidate {candidate?.number}
+				>Candidate {shown.current?.number}
 				<span class="block text-base font-normal text-muted-foreground"
-					>{candidate?.last_name}, {candidate?.first_name}</span
+					>{shown.current?.last_name}, {shown.current?.first_name}</span
 				></Sheet.Title
 			>
 			<Sheet.Description>
-				{#if candidate?.complete && candidate.average != null}
-					Average {candidate.average.toFixed(2)} / 100
+				{#if shown.current?.complete && shown.current.average != null}
+					Average {shown.current.average.toFixed(2)} / 100
 				{:else}
 					Average pending until every score is in.
 				{/if}
@@ -117,7 +120,7 @@
 
 <ConfirmDialog
 	bind:open={() => clearing !== null, (v) => !v && (clearing = null)}
-	title={`Clear ${clearing?.judge_name}'s scores?`}
+	title={`Clear ${shownClearing.current?.judge_name}'s scores?`}
 	description={`This deletes their scores for candidate ${candidate?.number} (${candidate?.first_name} ${candidate?.last_name}). In a 1-on-1 interview, other judges can then score this candidate. It cannot be undone.`}
 	confirmLabel="Clear scores"
 	onconfirm={() => {

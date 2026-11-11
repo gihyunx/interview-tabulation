@@ -2,6 +2,7 @@
 	import { api, errorMessage } from "#lib/api/client.ts";
 	import type { components } from "#lib/api/schema.d.ts";
 	import ConfirmDialog from "#lib/components/confirm-dialog.svelte";
+	import { latest } from "#lib/latest.svelte.ts";
 	import StateMessage from "#lib/components/state-message.svelte";
 	import { Badge } from "#lib/components/ui/badge/index.js";
 	import { Button } from "#lib/components/ui/button/index.js";
@@ -27,6 +28,7 @@
 	let editing = $state<{ interview?: Interview } | null>(null);
 	let assigning = $state<Interview | null>(null);
 	let deleting = $state<Interview | null>(null);
+	const shownDeleting = latest(() => deleting);
 
 	const reorder = createMutation(() => ({
 		mutationFn: async (ids: string[]) => {
@@ -150,7 +152,7 @@
 <JudgesDialog bind:interview={assigning} />
 <ConfirmDialog
 	bind:open={() => deleting !== null, (v) => !v && (deleting = null)}
-	title={`Delete ${deleting?.title}?`}
+	title={`Delete ${shownDeleting.current?.title}?`}
 	description="This also removes its judge assignments. Interviews that already have scores cannot be deleted."
 	confirmLabel="Delete"
 	onconfirm={() => {

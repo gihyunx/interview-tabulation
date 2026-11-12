@@ -90,6 +90,8 @@ func build(res score.Results, loc *time.Location) *excelize.File {
 
 func summary(f *excelize.File, bold int, res score.Results, selected []score.ResultInterview) {
 	const sheet = "Summary"
+	threeDP := "0.000"
+	avgStyle, _ := f.NewStyle(&excelize.Style{CustomNumFmt: &threeDP})
 	_ = f.SetSheetName("Sheet1", sheet)
 
 	head := []any{"No.", "Candidate"}
@@ -142,6 +144,8 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 		done := fmt.Sprintf("COUNT(%s)=%d", scores, res.Expected)
 		formula(f, sheet, len(cells)+1, r, fmt.Sprintf("SUM(%s)", scores))
 		formula(f, sheet, len(cells)+2, r, fmt.Sprintf(`IF(%s,%s/%d,"")`, done, sumRef, res.Expected))
+		avgRef, _ := excelize.CoordinatesToCellName(len(cells)+2, r)
+		_ = f.SetCellStyle(sheet, avgRef, avgRef, avgStyle)
 		formula(f, sheet, len(cells)+3, r, fmt.Sprintf(`IF(%s,"Complete","Pending")`, done))
 	}
 	finish(f, sheet, bold, len(head))

@@ -99,7 +99,7 @@ func TestWorkbook(t *testing.T) {
 		}
 		n := len(head)
 		assert.Equal(t, "280", calc(n-2, aRow), "sum 80+100+100")
-		assert.Equal(t, "93.33", calc(n-1, aRow)[:5], "average")
+		assert.Equal(t, "93.333", calc(n-1, aRow), "average, 3 decimals")
 		assert.Equal(t, "Complete", calc(n, aRow))
 		assert.Equal(t, "", calc(n-1, bRow), "no average until complete")
 		assert.Equal(t, "Pending", calc(n, bRow))

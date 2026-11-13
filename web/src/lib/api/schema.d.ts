@@ -116,6 +116,26 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
+	"/v1/candidates/renumber": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		get?: never;
+		put?: never;
+		/**
+		 * Renumber candidates
+		 * @description Closes gaps so numbers run 1..N, keeping the current order.
+		 */
+		post: operations["renumber-candidates"];
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	"/v1/candidates/{id}": {
 		parameters: {
 			query?: never;
@@ -963,6 +983,33 @@ export interface operations {
 				content: {
 					"application/json": components["schemas"]["ImportOutputBody"];
 				};
+			};
+			/** @description Error */
+			default: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					"application/problem+json": components["schemas"]["ErrorModel"];
+				};
+			};
+		};
+	};
+	"renumber-candidates": {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description No Content */
+			204: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content?: never;
 			};
 			/** @description Error */
 			default: {

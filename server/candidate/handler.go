@@ -40,6 +40,12 @@ func (h *handler) setupRoutes() {
 		Description: "Fails with 409 if the candidate has scores.", Middlewares: admin,
 	}, h.delete)
 	huma.Register(h.api, huma.Operation{
+		OperationID: "renumber-candidates", Method: http.MethodPost, Path: "/candidates/renumber",
+		Tags: tags, Summary: "Renumber candidates",
+		Description:   "Closes gaps so numbers run 1..N, keeping the current order.",
+		DefaultStatus: http.StatusNoContent, Middlewares: admin,
+	}, h.renumber)
+	huma.Register(h.api, huma.Operation{
 		OperationID: "import-candidates", Method: http.MethodPost, Path: "/candidates/import",
 		Tags: tags, Summary: "Import candidates from CSV",
 		Description: "Header must be `first_name,last_name` or `number,first_name,last_name`. Without a number column, candidates are numbered after the highest existing number, in file order. With dry_run=true nothing is saved and row errors are returned in the body.",
@@ -82,6 +88,11 @@ func (h *handler) delete(ctx context.Context, in *struct {
 }) (*struct{}, error) {
 	claims, _ := auth.ClaimsFrom(ctx)
 	return nil, mapErr(h.svc.delete(ctx, claims.Subject, in.ID))
+}
+
+func (h *handler) renumber(ctx context.Context, _ *struct{}) (*struct{}, error) {
+	claims, _ := auth.ClaimsFrom(ctx)
+	return nil, mapErr(h.svc.renumber(ctx, claims.Subject))
 }
 
 type importInput struct {

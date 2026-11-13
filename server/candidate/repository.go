@@ -78,3 +78,17 @@ func remove(ctx context.Context, q db.Querier, id string) (int64, error) {
 	tag, err := q.Exec(ctx, `DELETE FROM candidate WHERE candidate_id = @id`, pgx.NamedArgs{"id": id})
 	return tag.RowsAffected(), err
 }
+
+// renumber closes gaps so numbers run 1..N in current order. The unique
+// constraint is checked per row, so first shift everything above the old range.
+func renumber(ctx context.Context, q db.Querier) error {
+	_, err := q.Exec(ctx, `UPDATE candidate SET number = number + (SELECT MAX(number) FROM candidate)`)
+	if err != nil {
+		return err
+	}
+	_, err = q.Exec(ctx, `
+		UPDATE candidate c SET number = r.n, updated_at = NOW()
+		FROM (SELECT candidate_id, ROW_NUMBER() OVER (ORDER BY number) AS n FROM candidate) r
+		WHERE c.candidate_id = r.candidate_id`)
+	return err
+}

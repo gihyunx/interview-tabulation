@@ -15,6 +15,7 @@ import (
 	"github.com/gihyunx/interview-tabulation/internal/auth"
 	"github.com/gihyunx/interview-tabulation/internal/dbtest"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -164,6 +165,23 @@ func TestCRUDAndDeleteGuard(t *testing.T) {
 		assert.Equal(t, http.StatusConflict, apitest.Do(t, srv, "DELETE", "/v1/candidates/"+scored, tok, nil).StatusCode)
 		assert.Equal(t, http.StatusNoContent, apitest.Do(t, srv, "DELETE", "/v1/candidates/"+c.ID, tok, nil).StatusCode)
 	})
+}
+
+func TestRenumber(t *testing.T) {
+	tok := apitest.AdminToken(t)
+	for _, n := range []int{7001, 7005, 7009} {
+		resp := apitest.Do(t, srv, "POST", "/v1/candidates", tok, map[string]any{"number": n, "first_name": "R", "last_name": "N"})
+		require.Equal(t, http.StatusCreated, resp.StatusCode)
+	}
+	require.Equal(t, http.StatusNoContent, apitest.Do(t, srv, "POST", "/v1/candidates/renumber", tok, nil).StatusCode)
+	rows, err := fx.Pool.Query(context.Background(), `SELECT number FROM candidate ORDER BY number`)
+	require.NoError(t, err)
+	nums, err := pgx.CollectRows(rows, pgx.RowTo[int])
+	require.NoError(t, err)
+	for i, n := range nums {
+		assert.Equal(t, i+1, n)
+	}
+	assert.Equal(t, http.StatusForbidden, apitest.Do(t, srv, "POST", "/v1/candidates/renumber", apitest.JudgeToken(t, uuid.NewString()), nil).StatusCode)
 }
 
 func TestRoles(t *testing.T) {

@@ -752,6 +752,25 @@
 				"tags": ["Candidates"]
 			}
 		},
+		"/v1/candidates/renumber": {
+			"post": {
+				"description": "Closes gaps so numbers run 1..N, keeping the current order.",
+				"operationId": "renumber-candidates",
+				"responses": {
+					"204": { "description": "No Content" },
+					"default": {
+						"content": {
+							"application/problem+json": {
+								"schema": { "$ref": "#/components/schemas/ErrorModel" }
+							}
+						},
+						"description": "Error"
+					}
+				},
+				"summary": "Renumber candidates",
+				"tags": ["Candidates"]
+			}
+		},
 		"/v1/candidates/{id}": {
 			"delete": {
 				"description": "Fails with 409 if the candidate has scores.",

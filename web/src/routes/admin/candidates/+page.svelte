@@ -35,6 +35,7 @@
 	let deleting = $state<Candidate | null>(null);
 	const shownDeleting = latest(() => deleting);
 	let importing = $state(false);
+	let renumbering = $state(false);
 
 	function openForm(candidate?: Candidate) {
 		number = candidate?.number ?? null;
@@ -61,6 +62,17 @@
 		}
 	}));
 
+	const renumber = createMutation(() => ({
+		mutationFn: async () => {
+			const { error } = await api.POST("/v1/candidates/renumber");
+			if (error) {
+				throw new Error(errorMessage(error));
+			}
+		},
+		onSuccess: () => toast.success("Candidates renumbered."),
+		onError: (e) => toast.error(e.message)
+	}));
+
 	const remove = createMutation(() => ({
 		mutationFn: async (c: Candidate) => {
 			const { error } = await api.DELETE("/v1/candidates/{id}", { params: { path: { id: c.id } } });
@@ -78,6 +90,9 @@
 <div class="mb-6 flex items-center justify-between gap-4">
 	<h1 class="text-3xl font-bold">Candidates</h1>
 	<div class="flex gap-2">
+		<Button variant="outline" disabled={renumber.isPending} onclick={() => (renumbering = true)}>
+			Renumber
+		</Button>
 		<Button variant="outline" onclick={() => (importing = true)}>Import CSV</Button>
 		<Button onclick={() => openForm()}>New candidate</Button>
 	</div>
@@ -187,6 +202,17 @@
 			remove.mutate(deleting);
 		}
 		deleting = null;
+	}}
+/>
+
+<ConfirmDialog
+	bind:open={renumbering}
+	title="Renumber candidates?"
+	description="Numbers become 1, 2, 3... in the current order, closing any gaps."
+	confirmLabel="Renumber"
+	onconfirm={() => {
+		renumber.mutate();
+		renumbering = false;
 	}}
 />
 

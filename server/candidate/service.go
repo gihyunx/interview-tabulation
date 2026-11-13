@@ -80,6 +80,15 @@ func (s *service) delete(ctx context.Context, actorID, id string) error {
 	return nil
 }
 
+func (s *service) renumber(ctx context.Context, actorID string) error {
+	if err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error { return renumber(ctx, tx) }); err != nil {
+		return err
+	}
+	slog.Info("candidates renumbered", "actor_id", actorID)
+	s.changed()
+	return nil
+}
+
 // parseCSV reads a `first_name,last_name` or `number,first_name,last_name`
 // file. Row errors are returned per row; a bad header is a 422.
 func parseCSV(r io.Reader) ([]importRow, error) {

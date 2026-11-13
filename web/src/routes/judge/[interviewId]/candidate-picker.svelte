@@ -136,7 +136,6 @@
 				? `${candidates.length} candidates`
 				: `${shown.length} of ${candidates.length} match`}
 		</span>
-		<span>By number</span>
 	</div>
 	{#if locked > 0}
 		<p

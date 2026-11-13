@@ -277,7 +277,7 @@
 		>
 			{#each rows as row, n (row.id)}
 				<div
-					class="flex items-start gap-3 rounded-xl border bg-card p-3 shadow-xs"
+					class="flex flex-wrap items-start gap-3 rounded-xl border bg-card p-3 shadow-xs"
 					animate:flip={{ duration: 150 }}
 				>
 					<button
@@ -292,7 +292,7 @@
 						<GripVertical class="size-5" />
 					</button>
 					<span class="mt-2 w-6 text-sm font-semibold text-muted-foreground">{n + 1}</span>
-					<div class="flex-1 space-y-2">
+					<div class="min-w-48 flex-1 space-y-2">
 						<Input
 							aria-label={`Criterion ${n + 1} title`}
 							placeholder="Title"
@@ -344,10 +344,11 @@
 					<p class="text-sm text-destructive">{-left} points over</p>
 				{/if}
 			</div>
-			<div class="flex gap-2">
+			<div class="flex flex-wrap gap-2">
 				{#if selectedId !== NEW}
 					<Button
 						variant="outline"
+						class="h-auto min-h-9 py-1.5 whitespace-normal"
 						disabled={deleteBlock !== ""}
 						title={deleteBlock}
 						onclick={() => (deleteOpen = true)}

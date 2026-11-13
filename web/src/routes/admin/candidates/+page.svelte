@@ -124,9 +124,9 @@
 
 <svelte:head><title>Candidates</title></svelte:head>
 
-<div class="mb-6 flex items-center justify-between gap-4">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
 	<h1 class="text-3xl font-bold">Candidates</h1>
-	<div class="flex gap-2">
+	<div class="flex flex-wrap gap-2">
 		{#if selected.length > 0}
 			<Button variant="destructive" onclick={() => (bulkDeleting = true)}>
 				Delete selected ({selected.length})
@@ -141,7 +141,7 @@
 </div>
 
 <Input
-	class="mb-4 w-80"
+	class="mb-4 sm:w-80"
 	placeholder="Search by number or name"
 	aria-label="Search candidates"
 	bind:value={search}

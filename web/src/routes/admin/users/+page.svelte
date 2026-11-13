@@ -62,9 +62,9 @@
 
 <svelte:head><title>Users</title></svelte:head>
 
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
 	<h1 class="text-3xl font-bold">Users</h1>
-	<div class="flex gap-2">
+	<div class="flex flex-wrap gap-2">
 		{#if selected.length > 0}
 			<Button variant="destructive" onclick={() => (bulkDeleting = true)}>
 				Delete selected ({selected.length})

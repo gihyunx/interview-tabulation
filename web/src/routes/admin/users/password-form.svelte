@@ -3,7 +3,7 @@
 	import type { User } from "#lib/session.ts";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import * as Dialog from "#lib/components/ui/dialog/index.js";
-	import { Input } from "#lib/components/ui/input/index.js";
+	import PasswordInput from "#lib/components/password-input.svelte";
 	import { Label } from "#lib/components/ui/label/index.js";
 	import { createMutation } from "@tanstack/svelte-query";
 
@@ -50,9 +50,8 @@
 
 	<div class="space-y-2">
 		<Label for="reset-password">New password</Label>
-		<Input
+		<PasswordInput
 			id="reset-password"
-			type="password"
 			autocomplete="new-password"
 			required
 			minlength={8}

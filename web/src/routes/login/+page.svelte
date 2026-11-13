@@ -4,6 +4,7 @@
 	import { api, errorMessage } from "#lib/api/client.ts";
 	import { homeFor } from "#lib/session.ts";
 	import { Button } from "#lib/components/ui/button/index.js";
+	import PasswordInput from "#lib/components/password-input.svelte";
 	import { Input } from "#lib/components/ui/input/index.js";
 	import { Label } from "#lib/components/ui/label/index.js";
 	import { createMutation } from "@tanstack/svelte-query";
@@ -55,13 +56,7 @@
 		</div>
 		<div class="space-y-2">
 			<Label for="password">Password</Label>
-			<Input
-				id="password"
-				type="password"
-				autocomplete="current-password"
-				required
-				bind:value={password}
-			/>
+			<PasswordInput id="password" autocomplete="current-password" required bind:value={password} />
 		</div>
 
 		{#if login.isError}

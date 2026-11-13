@@ -4,6 +4,7 @@
 	import type { User } from "#lib/session.ts";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import PasswordInput from "#lib/components/password-input.svelte";
 	import { Input } from "#lib/components/ui/input/index.js";
 	import { Label } from "#lib/components/ui/label/index.js";
 	import * as Select from "#lib/components/ui/select/index.js";
@@ -93,9 +94,8 @@
 	{#if !user}
 		<div class="space-y-2">
 			<Label for="new-password">Password</Label>
-			<Input
+			<PasswordInput
 				id="new-password"
-				type="password"
 				autocomplete="new-password"
 				required
 				minlength={8}

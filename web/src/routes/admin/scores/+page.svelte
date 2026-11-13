@@ -67,7 +67,7 @@
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
 	<Input
-		class="w-80"
+		class="sm:w-80"
 		placeholder="Search candidates"
 		aria-label="Search candidates"
 		bind:value={search}

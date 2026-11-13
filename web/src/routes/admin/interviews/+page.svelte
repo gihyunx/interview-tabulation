@@ -74,7 +74,7 @@
 
 <svelte:head><title>Interviews</title></svelte:head>
 
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
 	<h1 class="text-3xl font-bold">Interviews</h1>
 	<Button onclick={() => (editing = {})}>New interview</Button>
 </div>
@@ -95,7 +95,7 @@
 >
 	{#each items as i (i.id)}
 		<section class="rounded-xl border bg-card p-4 shadow-xs" animate:flip={{ duration: 150 }}>
-			<div class="flex items-start gap-3">
+			<div class="flex flex-wrap items-start gap-3">
 				<button
 					type="button"
 					class="mt-1 cursor-grab text-muted-foreground"
@@ -107,7 +107,7 @@
 				>
 					<GripVertical class="size-5" />
 				</button>
-				<div class="flex-1">
+				<div class="min-w-0 flex-1">
 					<div class="flex flex-wrap items-center gap-2">
 						<h2 class="text-lg font-bold">{i.title}</h2>
 						<Badge variant="secondary">{modeLabel(i.mode)}</Badge>
@@ -128,7 +128,7 @@
 						{/each}
 					</ul>
 				</div>
-				<div class="flex flex-wrap justify-end gap-2">
+				<div class="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
 					<Button variant="outline" size="sm" onclick={() => (assigning = i)}>Judges</Button>
 					<Button variant="outline" size="sm" onclick={() => (editing = { interview: i })}
 						>Edit</Button

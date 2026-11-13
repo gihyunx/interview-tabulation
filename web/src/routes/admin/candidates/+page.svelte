@@ -3,6 +3,7 @@
 	import ConfirmDialog from "#lib/components/confirm-dialog.svelte";
 	import { latest } from "#lib/latest.svelte.ts";
 	import StateMessage from "#lib/components/state-message.svelte";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import * as Dialog from "#lib/components/ui/dialog/index.js";
 	import { Input } from "#lib/components/ui/input/index.js";
@@ -36,6 +37,22 @@
 	const shownDeleting = latest(() => deleting);
 	let importing = $state(false);
 	let renumbering = $state(false);
+
+	let picked = $state<string[]>([]);
+	// Ignore ids that no longer exist (deleted elsewhere).
+	const selected = $derived(
+		(candidates.data ?? []).filter((c) => picked.includes(c.id)).map((c) => c.id)
+	);
+	const allShown = $derived(shown.length > 0 && shown.every((c) => picked.includes(c.id)));
+	let bulkDeleting = $state(false);
+
+	function toggle(id: string, on: boolean) {
+		picked = on ? [...picked, id] : picked.filter((p) => p !== id);
+	}
+	function toggleAll(on: boolean) {
+		const ids = new Set(shown.map((c) => c.id));
+		picked = on ? [...new Set([...picked, ...ids])] : picked.filter((p) => !ids.has(p));
+	}
 
 	function openForm(candidate?: Candidate) {
 		number = candidate?.number ?? null;
@@ -73,6 +90,26 @@
 		onError: (e) => toast.error(e.message)
 	}));
 
+	const removeMany = createMutation(() => ({
+		mutationFn: async (ids: string[]) => {
+			const results = await Promise.all(
+				ids.map((id) => api.DELETE("/v1/candidates/{id}", { params: { path: { id } } }))
+			);
+			const failed = results.filter((r) => r.error).length;
+			return { deleted: ids.length - failed, failed };
+		},
+		onSuccess: ({ deleted, failed }) => {
+			picked = [];
+			if (failed === 0) {
+				toast.success(`Deleted ${deleted} candidates.`);
+			} else {
+				// Candidates with scores are refused by the server.
+				toast.error(`Deleted ${deleted}. ${failed} could not be deleted (they may have scores).`);
+			}
+		},
+		onError: (e) => toast.error(e.message)
+	}));
+
 	const remove = createMutation(() => ({
 		mutationFn: async (c: Candidate) => {
 			const { error } = await api.DELETE("/v1/candidates/{id}", { params: { path: { id: c.id } } });
@@ -90,6 +127,11 @@
 <div class="mb-6 flex items-center justify-between gap-4">
 	<h1 class="text-3xl font-bold">Candidates</h1>
 	<div class="flex gap-2">
+		{#if selected.length > 0}
+			<Button variant="destructive" onclick={() => (bulkDeleting = true)}>
+				Delete selected ({selected.length})
+			</Button>
+		{/if}
 		<Button variant="outline" disabled={renumber.isPending} onclick={() => (renumbering = true)}>
 			Renumber
 		</Button>
@@ -116,6 +158,13 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
+					<Table.Head class="w-10">
+						<Checkbox
+							aria-label="Select all shown candidates"
+							checked={allShown}
+							onCheckedChange={(v) => toggleAll(v === true)}
+						/>
+					</Table.Head>
 					<Table.Head class="w-24">No.</Table.Head>
 					<Table.Head>Name</Table.Head>
 					<Table.Head class="text-right">Actions</Table.Head>
@@ -124,6 +173,13 @@
 			<Table.Body>
 				{#each shown as c (c.id)}
 					<Table.Row>
+						<Table.Cell>
+							<Checkbox
+								aria-label={`Select candidate ${c.number}`}
+								checked={picked.includes(c.id)}
+								onCheckedChange={(v) => toggle(c.id, v === true)}
+							/>
+						</Table.Cell>
 						<Table.Cell class="text-lg font-bold tabular-nums">{c.number}</Table.Cell>
 						<Table.Cell class="text-muted-foreground">{c.last_name}, {c.first_name}</Table.Cell>
 						<Table.Cell class="space-x-2 text-right">
@@ -133,7 +189,7 @@
 					</Table.Row>
 				{:else}
 					<Table.Row>
-						<Table.Cell colspan={3} class="text-center text-muted-foreground">
+						<Table.Cell colspan={4} class="text-center text-muted-foreground">
 							{candidates.data.length === 0
 								? "No candidates yet. Add one or import a CSV."
 								: "No candidates match your search."}
@@ -213,6 +269,17 @@
 	onconfirm={() => {
 		renumber.mutate();
 		renumbering = false;
+	}}
+/>
+
+<ConfirmDialog
+	bind:open={bulkDeleting}
+	title={`Delete ${selected.length} candidates?`}
+	description="Candidates who already have scores cannot be deleted and will be skipped."
+	confirmLabel="Delete"
+	onconfirm={() => {
+		removeMany.mutate(selected);
+		bulkDeleting = false;
 	}}
 />
 

@@ -123,6 +123,17 @@ func TestWorkbook(t *testing.T) {
 		assert.GreaterOrEqual(t, name, float64(len(lastName(t, a)+", Can")))
 	})
 
+	t.Run("arial", func(t *testing.T) {
+		font, err := f.GetDefaultFont()
+		require.NoError(t, err)
+		assert.Equal(t, "Arial", font)
+		style, err := f.GetCellStyle("Summary", "A1")
+		require.NoError(t, err)
+		s, err := f.GetStyle(style)
+		require.NoError(t, err)
+		assert.Equal(t, "Arial", s.Font.Family, "bold header too")
+	})
+
 	t.Run("numbers are numbers", func(t *testing.T) {
 		typ, err := f.GetCellType("Summary", "A3") // the candidate number
 		require.NoError(t, err)

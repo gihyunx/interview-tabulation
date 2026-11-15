@@ -22,6 +22,7 @@ import (
 const (
 	xlsxType   = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	timeLayout = "2006-01-02 15:04"
+	font       = "Arial"
 )
 
 func Setup(api huma.API, pool *pgxpool.Pool, cfg config.Config) {
@@ -65,9 +66,10 @@ func Setup(api huma.API, pool *pgxpool.Pool, cfg config.Config) {
 
 func build(res score.Results, loc *time.Location) *excelize.File {
 	f := excelize.NewFile()
+	_ = f.SetDefaultFont(font) // styles with their own Font must name it again
 	// Formulas are saved without results; make Excel and LibreOffice compute them on open.
 	_ = f.SetCalcProps(&excelize.CalcPropsOptions{FullCalcOnLoad: new(true)})
-	bold, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}})
+	bold, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true, Family: font}})
 
 	var selected []score.ResultInterview
 	for _, i := range res.Interviews {
@@ -166,7 +168,7 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 	finish(f, sheet, bold, len(head), 2)
 
 	// Merged after finish so a long interview title does not widen its first column.
-	center, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}, Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"}})
+	center, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true, Family: font}, Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"}})
 	merge := func(c1, r1, c2, r2 int) {
 		from, _ := excelize.CoordinatesToCellName(c1, r1)
 		to, _ := excelize.CoordinatesToCellName(c2, r2)

@@ -72,21 +72,30 @@ func TestWorkbook(t *testing.T) {
 	t.Run("summary", func(t *testing.T) {
 		rows, err := f.GetRows("Summary")
 		require.NoError(t, err)
-		head := rows[0]
-		assert.Equal(t, []string{"No.", "Candidate"}, head[:2])
-		assert.Contains(t, head[2], "Interviewer")
+		head, sub := rows[0], rows[1]
+		assert.Equal(t, []string{"No.", "Candidate", titles[0], ""}, head[:4], "interview title over its columns")
+		assert.Equal(t, []string{"Interviewer", "Total"}, sub[2:4])
+		assert.Equal(t, titles[1], head[4])
 		assert.Equal(t, []string{"Sum", "Average (/100)", "Status"}, head[len(head)-3:])
 
+		merged, err := f.GetMergeCells("Summary")
+		require.NoError(t, err)
+		var refs []string
+		for _, m := range merged {
+			refs = append(refs, m.GetStartAxis()+":"+m.GetEndAxis())
+		}
+		assert.Subset(t, refs, []string{"A1:A2", "B1:B2", "C1:D1", "E1:F1"})
+
 		aRow, bRow := 0, 0
-		for i, r := range rows[1:] {
+		for i, r := range rows[2:] {
 			if r[1] == lastName(t, a)+", Can" {
-				aRow = i + 2
+				aRow = i + 3
 			}
 			if r[1] == lastName(t, b)+", Can" {
-				bRow = i + 2
+				bRow = i + 3
 			}
 		}
-		assert.Len(t, rows[1:], 3, "every candidate, scored or not")
+		assert.Len(t, rows[2:], 3, "every candidate, scored or not")
 		require.NotZero(t, aRow)
 		calc := func(col, row int) string {
 			ref, _ := excelize.CoordinatesToCellName(col, row)
@@ -115,7 +124,7 @@ func TestWorkbook(t *testing.T) {
 	})
 
 	t.Run("numbers are numbers", func(t *testing.T) {
-		typ, err := f.GetCellType("Summary", "A2") // the candidate number
+		typ, err := f.GetCellType("Summary", "A3") // the candidate number
 		require.NoError(t, err)
 		assert.NotContains(t, []excelize.CellType{excelize.CellTypeSharedString, excelize.CellTypeInlineString}, typ, "stored as a number, not text")
 	})

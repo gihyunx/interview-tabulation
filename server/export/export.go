@@ -94,18 +94,33 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 	avgStyle, _ := f.NewStyle(&excelize.Style{CustomNumFmt: &threeDP})
 	_ = f.SetSheetName("Sheet1", sheet)
 
-	head := []any{"No.", "Candidate"}
+	// Two header rows: interview titles over their columns, then interviewer or judge names.
+	// The other headers span both rows.
+	head, sub := []any{"No.", "Candidate"}, []any{nil, nil}
+	type group struct {
+		title       string
+		first, last int // columns
+	}
+	var groups []group
 	for _, in := range selected {
+		first := len(head) + 1
 		if in.Mode == "one_on_one" {
-			head = append(head, in.Title+" - Interviewer", in.Title+" - Total")
-			continue
+			sub = append(sub, "Interviewer", "Total")
+		} else {
+			for _, j := range in.Judges {
+				sub = append(sub, j.Name)
+			}
 		}
-		for _, j := range in.Judges {
-			head = append(head, in.Title+" - "+j.Name)
+		for len(head) < len(sub) {
+			head = append(head, nil)
+		}
+		if len(head) >= first {
+			groups = append(groups, group{in.Title, first, len(head)})
 		}
 	}
 	head = append(head, "Sum", "Average (/100)", "Status")
 	row(f, sheet, 1, head)
+	row(f, sheet, 2, sub)
 
 	for n, c := range res.Candidates {
 		cells := []any{c.Number, c.LastName + ", " + c.FirstName}
@@ -126,7 +141,7 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 				}
 			}
 		}
-		r := n + 2
+		r := n + 3
 		row(f, sheet, r, cells)
 		// Sum, average and status are formulas over the score columns, so they can be checked.
 		// SUM and COUNT skip the interviewer names, leaving only the res.Expected totals.
@@ -148,7 +163,26 @@ func summary(f *excelize.File, bold int, res score.Results, selected []score.Res
 		_ = f.SetCellStyle(sheet, avgRef, avgRef, avgStyle)
 		formula(f, sheet, len(cells)+3, r, fmt.Sprintf(`IF(%s,"Complete","Pending")`, done))
 	}
-	finish(f, sheet, bold, len(head))
+	finish(f, sheet, bold, len(head), 2)
+
+	// Merged after finish so a long interview title does not widen its first column.
+	center, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}, Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"}})
+	merge := func(c1, r1, c2, r2 int) {
+		from, _ := excelize.CoordinatesToCellName(c1, r1)
+		to, _ := excelize.CoordinatesToCellName(c2, r2)
+		_ = f.MergeCell(sheet, from, to)
+		_ = f.SetCellStyle(sheet, from, to, center)
+	}
+	for c := 1; c <= len(head); c++ {
+		if c <= 2 || c > len(sub) {
+			merge(c, 1, c, 2)
+		}
+	}
+	for _, g := range groups {
+		ref, _ := excelize.CoordinatesToCellName(g.first, 1)
+		_ = f.SetCellValue(sheet, ref, g.title)
+		merge(g.first, 1, g.last, 1)
+	}
 }
 
 func detail(f *excelize.File, bold int, sheet string, res score.Results, in score.ResultInterview, loc *time.Location) {
@@ -201,7 +235,7 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 			r++
 		}
 	}
-	finish(f, sheet, bold, len(head))
+	finish(f, sheet, bold, len(head), 1)
 }
 
 func submission(c score.ResultCandidate, interviewID, judgeID string) *score.Submission {
@@ -224,12 +258,13 @@ func formula(f *excelize.File, sheet string, col, n int, expr string) {
 	_ = f.SetCellFormula(sheet, ref, expr)
 }
 
-// finish makes the header bold and frozen and fits each column to its longest text, like
+// finish makes the header rows bold and frozen and fits each column to its longest text, like
 // double-clicking the column edge. Formula cells read as empty here; their numbers are short.
-func finish(f *excelize.File, sheet string, bold, cols int) {
-	last, _ := excelize.CoordinatesToCellName(cols, 1)
+func finish(f *excelize.File, sheet string, bold, cols, headRows int) {
+	last, _ := excelize.CoordinatesToCellName(cols, headRows)
 	_ = f.SetCellStyle(sheet, "A1", last, bold)
-	_ = f.SetPanes(sheet, &excelize.Panes{Freeze: true, YSplit: 1, TopLeftCell: "A2", ActivePane: "bottomLeft"})
+	top, _ := excelize.CoordinatesToCellName(1, headRows+1)
+	_ = f.SetPanes(sheet, &excelize.Panes{Freeze: true, YSplit: headRows, TopLeftCell: top, ActivePane: "bottomLeft"})
 	widths := make([]int, cols)
 	rows, _ := f.GetRows(sheet)
 	for _, r := range rows {

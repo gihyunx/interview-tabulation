@@ -159,10 +159,11 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 	head = append(head, "Total", "Submitted at", "Last edited at")
 	row(f, sheet, 1, head)
 
+	middle, _ := f.NewStyle(&excelize.Style{Alignment: &excelize.Alignment{Vertical: "center"}})
 	r := 2
 	for _, c := range res.Candidates {
 		name := c.LastName + ", " + c.FirstName
-		subs := 0
+		first, subs := r, 0
 		for _, s := range c.Submissions {
 			if s.InterviewID != in.ID {
 				continue
@@ -172,7 +173,10 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 			for _, v := range s.Values {
 				values[v.CriterionID] = v.Value
 			}
-			cells := []any{c.Number, name, s.JudgeName}
+			cells := []any{nil, nil, s.JudgeName}
+			if subs == 1 { // the merge below shows the first row's number and name across all rows
+				cells[0], cells[1] = c.Number, name
+			}
 			for _, cr := range in.Criteria {
 				cells = append(cells, values[cr.ID])
 			}
@@ -184,6 +188,13 @@ func detail(f *excelize.File, bold int, sheet string, res score.Results, in scor
 				formula(f, sheet, total, r, fmt.Sprintf("SUM(%s:%s)", from, to))
 			}
 			r++
+		}
+		if subs > 1 { // a panel candidate has one row per judge
+			for _, col := range []string{"A", "B"} {
+				top, bottom := fmt.Sprintf("%s%d", col, first), fmt.Sprintf("%s%d", col, r-1)
+				_ = f.MergeCell(sheet, top, bottom)
+				_ = f.SetCellStyle(sheet, top, bottom, middle)
+			}
 		}
 		if subs == 0 { // keep the candidate list complete
 			row(f, sheet, r, []any{c.Number, name})

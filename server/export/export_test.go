@@ -136,6 +136,14 @@ func TestWorkbook(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "100", total, "total is a SUM of the criteria")
 		assert.Len(t, rows[1:], 4, "a x 2 judges, b x 1 judge, unscored")
+
+		merged, err := f.GetMergeCells(titles[1])
+		require.NoError(t, err)
+		var refs []string
+		for _, m := range merged {
+			refs = append(refs, m.GetStartAxis()+":"+m.GetEndAxis())
+		}
+		assert.ElementsMatch(t, []string{"A2:A3", "B2:B3"}, refs, "a's number and name span both judge rows")
 	})
 }
 

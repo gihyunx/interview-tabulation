@@ -243,9 +243,12 @@ func LoadResults(ctx context.Context, q db.Querier, selected []string) (Results,
 		c.Submissions = append(c.Submissions, *sub)
 	}
 
-	order := map[string]int{}
+	order, judgeOrder := map[string]int{}, map[string]int{}
 	for i, in := range res.Interviews {
 		order[in.ID] = i
+		for n, j := range in.Judges { // already alphabetical, like the judge columns
+			judgeOrder[j.JudgeID] = n
+		}
 	}
 	for i := range res.Candidates {
 		c := &res.Candidates[i]
@@ -253,7 +256,7 @@ func LoadResults(ctx context.Context, q db.Querier, selected []string) (Results,
 			if d := order[a.InterviewID] - order[b.InterviewID]; d != 0 {
 				return d
 			}
-			if d := a.SubmittedAt.Compare(b.SubmittedAt); d != 0 {
+			if d := judgeOrder[a.JudgeID] - judgeOrder[b.JudgeID]; d != 0 {
 				return d
 			}
 			return compareStr(a.JudgeID, b.JudgeID)

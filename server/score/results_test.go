@@ -1,6 +1,7 @@
 package score
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -89,6 +90,21 @@ func TestAverageOnlyWhenAllTotalsAreIn(t *testing.T) {
 		assert.Len(t, s.Values, 3)
 		assert.False(t, s.SubmittedAt.IsZero())
 	})
+}
+
+func TestPanelSubmissionsFollowJudgeNames(t *testing.T) {
+	panel := newWorld(t, "panel", 2)
+	for i, last := range []string{"Abad", "Zamora"} {
+		_, err := fx.Pool.Exec(context.Background(), `UPDATE users SET last_name = $1 WHERE user_id = $2`, last, panel.judgeUsers[i])
+		require.NoError(t, err)
+	}
+	cand := fx.Candidate(t)
+	panel.fill(t, 1, cand, 50) // Zamora submits first
+	panel.fill(t, 0, cand, 60)
+
+	subs := find(t, results(t, panel.interviewID), cand).Submissions
+	require.Len(t, subs, 2)
+	assert.Equal(t, panel.judgeIDs[0], subs[0].JudgeID, "Abad before Zamora, whoever submitted first")
 }
 
 func TestTwoInterviewsOfTheSameModeBothCount(t *testing.T) {

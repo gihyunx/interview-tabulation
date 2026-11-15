@@ -11,6 +11,9 @@
 	import * as Table from "#lib/components/ui/table/index.js";
 	import { resultsQuery } from "#lib/queries.ts";
 	import { matchScore } from "#lib/search.ts";
+	import ArrowDownIcon from "@lucide/svelte/icons/arrow-down";
+	import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
+	import ArrowUpDownIcon from "@lucide/svelte/icons/arrow-up-down";
 	import { createQuery } from "@tanstack/svelte-query";
 	import DetailSheet from "./detail-sheet.svelte";
 
@@ -36,9 +39,28 @@
 	}
 
 	let search = $state("");
-	const rows = $derived(
-		candidates.filter((c) => matchScore(search, `${c.number} ${c.first_name} ${c.last_name}`) > 0)
-	);
+	// Clicking the Average header cycles: candidate order, highest first, lowest first.
+	let sort = $state<"none" | "desc" | "asc">("none");
+	const nextSort = { none: "desc", desc: "asc", asc: "none" } as const;
+	const avgOf = (c: Candidate) => (c.complete && c.average != null ? c.average : null);
+	const rows = $derived.by(() => {
+		const found = candidates.filter(
+			(c) => matchScore(search, `${c.number} ${c.first_name} ${c.last_name}`) > 0
+		);
+		if (sort === "none") {
+			return found;
+		}
+		const dir = sort === "desc" ? -1 : 1;
+		// Pending averages always sink to the bottom; ties keep candidate order (stable sort).
+		return found.toSorted((a, b) => {
+			const x = avgOf(a);
+			const y = avgOf(b);
+			if (x === null || y === null) {
+				return (x === null ? 1 : 0) - (y === null ? 1 : 0);
+			}
+			return (x - y) * dir;
+		});
+	});
 
 	let detailId = $state<string | null>(null);
 	const detail = $derived(candidates.find((c) => c.id === detailId) ?? null);
@@ -111,7 +133,26 @@
 							{i.title}
 						</Table.Head>
 					{/each}
-					<Table.Head rowspan={2} class="border-l text-right">Average</Table.Head>
+					<Table.Head
+						rowspan={2}
+						class="border-l text-right"
+						aria-sort={sort === "none" ? "none" : sort === "desc" ? "descending" : "ascending"}
+					>
+						<button
+							type="button"
+							class="inline-flex items-center gap-1 hover:underline"
+							onclick={() => (sort = nextSort[sort])}
+						>
+							Average
+							{#if sort === "desc"}
+								<ArrowDownIcon class="size-4" />
+							{:else if sort === "asc"}
+								<ArrowUpIcon class="size-4" />
+							{:else}
+								<ArrowUpDownIcon class="size-4 text-muted-foreground" />
+							{/if}
+						</button>
+					</Table.Head>
 				</Table.Row>
 				<Table.Row>
 					{#each selected as i (i.id)}

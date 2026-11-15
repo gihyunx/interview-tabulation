@@ -9,7 +9,7 @@ const CRITERIA = ["Content", "Delivery"]; // 60 + 40 points
 async function login(page: Page, username: string, password: string) {
 	await page.goto("/login");
 	await page.getByLabel("Username").fill(username);
-	await page.getByLabel("Password").fill(password);
+	await page.getByLabel("Password", { exact: true }).fill(password);
 	await page.getByRole("button", { name: "Log in" }).click();
 }
 
@@ -26,7 +26,7 @@ async function addUser(page: Page, first: string, last: string, username: string
 	await dialog.getByLabel("First name").fill(first);
 	await dialog.getByLabel("Last name").fill(last);
 	await dialog.getByLabel("Username").fill(username);
-	await dialog.getByLabel("Password").fill(PASSWORD);
+	await dialog.getByLabel("Password", { exact: true }).fill(PASSWORD);
 	await dialog.getByRole("button", { name: "Save" }).click();
 	await expect(page.getByRole("cell", { name: username, exact: true })).toBeVisible();
 }
